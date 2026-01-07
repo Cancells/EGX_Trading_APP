@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">EGX Trading</string>
+    <string name="portfolio_balance">$114,656</string>
+    <string name="daily_change">+$44.63 (+0.04%) Today</string>
+    <string name="buying_power">Buying Power</string>
+    <string name="buying_power_amount">$2,586.11</string>
+    <string name="my_portfolio">My Portfolio</string>
+    <string name="watchlist">Watchlist</string>
+    <string name="search_hint">Search stocks</string>
+</resources>

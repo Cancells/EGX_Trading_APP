@@ -1,0 +1,58 @@
+[
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.example.egxtradingapp-debug-32:/layout_activity_main.xml.flat",
+        "source": "com.example.egxtradingapp-main-34:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/drawable_timeline_button_active.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/drawable/timeline_button_active.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/drawable_search_background.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/drawable/search_background.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/drawable_timeline_button.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/drawable/timeline_button.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/drawable_divider.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/drawable/divider.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/layout_activity_main.xml.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-debug-32:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "/home/codespace/.gradle/daemon/9.0.0/com.example.egxtradingapp-main-34:/mipmap-mdpi/ic_launcher.png"
+    }
+]
