@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">EGX Trading APP</string>
+    <string name="portfolio_value">$114,656</string>
+    <string name="portfolio_change">+$44.63</string>
+    <string name="buying_power">$2586.11</string>
+    <string name="live">LIVE</string>
+    <string name="1d">1D</string>
+    <string name="1w">1W</string>
+    <string name="3m">3M</string>
+    <string name="1y">1Y</string>
+    <string name="all">ALL</string>
+    <string name="free_stocks">Free Stocks</string>
+    <string name="portfolio">Portfolio</string>
+    <string name="cash">Cash</string>
+    <string name="messages">Messages</string>
+    <string name="account">Account</string>
+    <string name="search">Search</string>
+    <string name="market">Market</string>
+</resources>
