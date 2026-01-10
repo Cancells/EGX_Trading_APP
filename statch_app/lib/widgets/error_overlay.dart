@@ -44,11 +44,11 @@ class ErrorOverlay extends StatelessWidget {
                 color: Colors.transparent,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withOpacity(0.95),
+                    color: Colors.redAccent.withValues(alpha: 0.95),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -76,11 +76,11 @@ class ErrorOverlay extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                        const IconButton(
+                          icon: Icon(Icons.close_rounded, color: Colors.white, size: 18),
                           onPressed: clearError,
                           padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
+                          constraints: BoxConstraints(),
                         ),
                       ],
                     ),

@@ -60,7 +60,7 @@ class AppTheme {
         ),
         iconTheme: const IconThemeData(color: darkText),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: darkCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -109,7 +109,7 @@ class AppTheme {
         ),
         iconTheme: const IconThemeData(color: lightText),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: lightCard,
         elevation: 2,
         shadowColor: Colors.black12,
@@ -192,7 +192,7 @@ class AppTheme {
       bodySmall: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.normal,
-        color: textColor.withOpacity(0.7),
+        color: textColor.withValues(alpha: 0.7),
       ),
       labelLarge: GoogleFonts.inter(
         fontSize: 14,
@@ -207,7 +207,7 @@ class AppTheme {
       labelSmall: GoogleFonts.inter(
         fontSize: 10,
         fontWeight: FontWeight.w500,
-        color: textColor.withOpacity(0.7),
+        color: textColor.withValues(alpha: 0.7),
       ),
     );
   }

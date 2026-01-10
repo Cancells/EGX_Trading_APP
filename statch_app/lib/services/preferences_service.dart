@@ -12,9 +12,11 @@ class PreferencesService {
   static const String _keyUserName = 'user_name';
   static const String _keyUserDob = 'user_dob';
   static const String _keyUserAvatar = 'user_avatar';
+  static const String _keyCustomAvatarPath = 'custom_avatar_path';
   static const String _keyDarkMode = 'dark_mode';
   static const String _keyNotificationsEnabled = 'notifications_enabled';
   static const String _keyPriceAlerts = 'price_alerts';
+  static const String _keyHasSeenWelcome = 'has_seen_welcome';
 
   /// Initialize the preferences service
   Future<void> init() async {
@@ -40,10 +42,20 @@ class PreferencesService {
     }
   }
 
-  /// User Avatar Index (0-7 for different icons)
+  /// User Avatar Index (0-11 for different financial icons)
   int get userAvatarIndex => _prefs?.getInt(_keyUserAvatar) ?? 0;
   Future<void> setUserAvatarIndex(int index) async {
     await _prefs?.setInt(_keyUserAvatar, index);
+  }
+
+  /// Custom Avatar Image Path
+  String? get customAvatarPath => _prefs?.getString(_keyCustomAvatarPath);
+  Future<void> setCustomAvatarPath(String? path) async {
+    if (path != null) {
+      await _prefs?.setString(_keyCustomAvatarPath, path);
+    } else {
+      await _prefs?.remove(_keyCustomAvatarPath);
+    }
   }
 
   /// Dark Mode
@@ -62,5 +74,11 @@ class PreferencesService {
   bool get priceAlertsEnabled => _prefs?.getBool(_keyPriceAlerts) ?? true;
   Future<void> setPriceAlertsEnabled(bool value) async {
     await _prefs?.setBool(_keyPriceAlerts, value);
+  }
+
+  /// Has Seen Welcome Screen
+  bool get hasSeenWelcome => _prefs?.getBool(_keyHasSeenWelcome) ?? false;
+  Future<void> setHasSeenWelcome(bool value) async {
+    await _prefs?.setBool(_keyHasSeenWelcome, value);
   }
 }

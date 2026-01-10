@@ -34,7 +34,7 @@ class AboutScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.robinhoodGreen.withOpacity(0.2),
+                      color: AppTheme.robinhoodGreen.withValues(alpha: 0.2),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -60,7 +60,7 @@ class AboutScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.robinhoodGreen.withOpacity(0.1),
+                color: AppTheme.robinhoodGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Text(
@@ -89,22 +89,22 @@ class AboutScreen extends StatelessWidget {
               context,
               title: 'Features',
               items: [
-                _FeatureItem(
+                const _FeatureItem(
                   icon: Icons.show_chart_rounded,
                   title: 'Real-time Charts',
                   description: 'Track EGX 30 and Egyptian stocks',
                 ),
-                _FeatureItem(
+                const _FeatureItem(
                   icon: Icons.workspace_premium_rounded,
                   title: 'Gold Prices',
                   description: 'Live 21K and 24K gold prices',
                 ),
-                _FeatureItem(
+                const _FeatureItem(
                   icon: Icons.notifications_active_rounded,
                   title: 'Price Alerts',
                   description: 'Get notified on market movements',
                 ),
-                _FeatureItem(
+                const _FeatureItem(
                   icon: Icons.dark_mode_rounded,
                   title: 'Dark Mode',
                   description: 'Beautiful dark and light themes',
@@ -202,7 +202,7 @@ class AboutScreen extends StatelessWidget {
                     Divider(
                       height: 1,
                       indent: 60,
-                      color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                      color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                     ),
                 ],
               );
@@ -221,13 +221,13 @@ class AboutScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.robinhoodGreen.withOpacity(0.15),
-            AppTheme.robinhoodGreen.withOpacity(0.05),
+            AppTheme.robinhoodGreen.withValues(alpha: 0.15),
+            AppTheme.robinhoodGreen.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.robinhoodGreen.withOpacity(0.2),
+          color: AppTheme.robinhoodGreen.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -237,7 +237,7 @@ class AboutScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.robinhoodGreen.withOpacity(0.2),
+                  color: AppTheme.robinhoodGreen.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(

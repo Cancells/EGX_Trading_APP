@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:provider/provider.dart';
 import '../services/preferences_service.dart';
+import '../services/pin_service.dart';
+import '../services/currency_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/dynamic_theme.dart';
+import 'security_gate_screen.dart';
+import 'profile_screen.dart';
+import 'about_screen.dart';
 
-/// Settings Screen with theme and notification toggles
+/// Settings Screen with theme, security, and currency options
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onThemeToggle;
 
@@ -17,10 +25,15 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final PreferencesService _prefsService = PreferencesService();
+  final PinService _pinService = PinService();
+  final LocalAuthentication _localAuth = LocalAuthentication();
   
   late bool _isDarkMode;
   late bool _notificationsEnabled;
   late bool _priceAlertsEnabled;
+  late bool _securityEnabled;
+  late bool _biometricEnabled;
+  bool _canCheckBiometrics = false;
 
   @override
   void initState() {
@@ -28,45 +41,226 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _isDarkMode = _prefsService.isDarkMode;
     _notificationsEnabled = _prefsService.notificationsEnabled;
     _priceAlertsEnabled = _prefsService.priceAlertsEnabled;
+    _securityEnabled = _pinService.isSecurityEnabled;
+    _biometricEnabled = _pinService.isBiometricEnabled;
+    _checkBiometricAvailability();
+  }
+
+  Future<void> _checkBiometricAvailability() async {
+    try {
+      _canCheckBiometrics = await _localAuth.canCheckBiometrics;
+      if (mounted) setState(() {});
+    } catch (_) {
+      _canCheckBiometrics = false;
+    }
   }
 
   Future<void> _toggleDarkMode(bool value) async {
-    setState(() {
-      _isDarkMode = value;
-    });
+    setState(() => _isDarkMode = value);
     await _prefsService.setDarkMode(value);
     widget.onThemeToggle();
   }
 
   Future<void> _toggleNotifications(bool value) async {
-    setState(() {
-      _notificationsEnabled = value;
-    });
+    setState(() => _notificationsEnabled = value);
     await _prefsService.setNotificationsEnabled(value);
   }
 
   Future<void> _togglePriceAlerts(bool value) async {
-    setState(() {
-      _priceAlertsEnabled = value;
-    });
+    setState(() => _priceAlertsEnabled = value);
     await _prefsService.setPriceAlertsEnabled(value);
+  }
+
+  Future<void> _toggleSecurity(bool value) async {
+    if (value && !_pinService.isPinSet) {
+      // Need to set up PIN first
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PinSetupScreen(
+            onComplete: () => Navigator.pop(context, true),
+          ),
+        ),
+      );
+      if (result != true) return;
+    }
+    
+    await _pinService.setSecurityEnabled(value);
+    setState(() => _securityEnabled = value);
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (value) {
+      // Verify biometric first
+      try {
+        final authenticated = await _localAuth.authenticate(
+          localizedReason: 'Enable biometric authentication',
+          options: const AuthenticationOptions(biometricOnly: true),
+        );
+        if (!authenticated) return;
+      } catch (_) {
+        return;
+      }
+    }
+    
+    await _pinService.setBiometricEnabled(value);
+    setState(() => _biometricEnabled = value);
+  }
+
+  void _showCurrencyPicker() {
+    final currencyService = context.read<CurrencyService>();
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Select Currency',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'All values will be converted to selected currency',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.mutedText,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...Currency.values.map((currency) {
+                final isSelected = currency == currencyService.baseCurrency;
+                return ListTile(
+                  onTap: () {
+                    currencyService.setBaseCurrency(currency);
+                    Navigator.pop(context);
+                  },
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.robinhoodGreen.withValues(alpha: 0.1)
+                          : (isDark ? AppTheme.darkCard : Colors.grey.shade100),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        currency.symbol,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected
+                              ? AppTheme.robinhoodGreen
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    currency.name,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? AppTheme.robinhoodGreen : null,
+                    ),
+                  ),
+                  subtitle: Text(currency.code),
+                  trailing: isSelected
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppTheme.robinhoodGreen,
+                        )
+                      : null,
+                );
+              }),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _setupPin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PinSetupScreen(
+          onComplete: () {
+            Navigator.pop(context);
+            setState(() {});
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: Colors.white),
+                    SizedBox(width: 12),
+                    Text('PIN updated successfully'),
+                  ],
+                ),
+                backgroundColor: AppTheme.robinhoodGreen,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currencyService = context.watch<CurrencyService>();
+    final themeProvider = context.watch<DynamicThemeProvider>();
     
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
+          // Profile Section
+          _buildSectionHeader(context, 'Account'),
+          _buildSettingTile(
+            context,
+            icon: Icons.person_outline_rounded,
+            title: 'Profile',
+            subtitle: _prefsService.userName,
+            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            ).then((_) => setState(() {})),
+            isDark: isDark,
+          ),
+          
+          const SizedBox(height: 24),
+          
           // Appearance Section
           _buildSectionHeader(context, 'Appearance'),
           _buildSettingTile(
@@ -77,10 +271,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: Switch(
               value: _isDarkMode,
               onChanged: _toggleDarkMode,
-              activeColor: AppTheme.robinhoodGreen,
+              activeTrackColor: AppTheme.robinhoodGreen,
             ),
             isDark: isDark,
           ),
+          if (themeProvider.supportsDynamicColor)
+            _buildSettingTile(
+              context,
+              icon: Icons.palette_outlined,
+              title: 'Dynamic Colors',
+              subtitle: 'Use Material You wallpaper colors',
+              trailing: Switch(
+                value: themeProvider.useDynamicColor,
+                onChanged: (value) => themeProvider.toggleDynamicColor(value),
+                activeTrackColor: AppTheme.robinhoodGreen,
+              ),
+              isDark: isDark,
+            ),
+          
+          const SizedBox(height: 24),
+          
+          // Currency Section
+          _buildSectionHeader(context, 'Currency'),
+          _buildSettingTile(
+            context,
+            icon: Icons.currency_exchange_rounded,
+            title: 'Base Currency',
+            subtitle: '${currencyService.baseCurrency.name} (${currencyService.baseCurrency.symbol})',
+            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+            onTap: _showCurrencyPicker,
+            isDark: isDark,
+          ),
+          _buildSettingTile(
+            context,
+            icon: Icons.sync_rounded,
+            title: 'Exchange Rates',
+            subtitle: currencyService.lastUpdate != null
+                ? 'Updated ${_formatLastUpdate(currencyService.lastUpdate!)}'
+                : 'Not yet updated',
+            trailing: currencyService.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    onPressed: () => currencyService.fetchExchangeRates(),
+                  ),
+            isDark: isDark,
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Security Section
+          _buildSectionHeader(context, 'Security'),
+          _buildSettingTile(
+            context,
+            icon: Icons.lock_outline_rounded,
+            title: 'App Lock',
+            subtitle: 'Require authentication on launch',
+            trailing: Switch(
+              value: _securityEnabled,
+              onChanged: _toggleSecurity,
+              activeTrackColor: AppTheme.robinhoodGreen,
+            ),
+            isDark: isDark,
+          ),
+          if (_securityEnabled && _canCheckBiometrics)
+            _buildSettingTile(
+              context,
+              icon: Icons.fingerprint_rounded,
+              title: 'Biometric Authentication',
+              subtitle: 'Use fingerprint or face to unlock',
+              trailing: Switch(
+                value: _biometricEnabled,
+                onChanged: _toggleBiometric,
+                activeTrackColor: AppTheme.robinhoodGreen,
+              ),
+              isDark: isDark,
+            ),
+          if (_securityEnabled)
+            _buildSettingTile(
+              context,
+              icon: Icons.pin_rounded,
+              title: _pinService.isPinSet ? 'Change PIN' : 'Set PIN',
+              subtitle: _pinService.isPinSet ? 'Update your 4-digit PIN' : 'Create a 4-digit PIN',
+              trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+              onTap: _setupPin,
+              isDark: isDark,
+            ),
           
           const SizedBox(height: 24),
           
@@ -94,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: Switch(
               value: _notificationsEnabled,
               onChanged: _toggleNotifications,
-              activeColor: AppTheme.robinhoodGreen,
+              activeTrackColor: AppTheme.robinhoodGreen,
             ),
             isDark: isDark,
           ),
@@ -106,71 +386,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: Switch(
               value: _priceAlertsEnabled,
               onChanged: _togglePriceAlerts,
-              activeColor: AppTheme.robinhoodGreen,
+              activeTrackColor: AppTheme.robinhoodGreen,
             ),
             isDark: isDark,
           ),
           
           const SizedBox(height: 24),
           
-          // Market Section
-          _buildSectionHeader(context, 'Market'),
+          // About Section
+          _buildSectionHeader(context, 'About'),
           _buildSettingTile(
             context,
-            icon: Icons.currency_exchange_rounded,
-            title: 'Currency',
-            subtitle: 'Egyptian Pound (EGP)',
+            icon: Icons.info_outline_rounded,
+            title: 'About Statch',
+            subtitle: 'Version 2.0.0',
             trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-            onTap: () {},
-            isDark: isDark,
-          ),
-          _buildSettingTile(
-            context,
-            icon: Icons.access_time_rounded,
-            title: 'Market Hours',
-            subtitle: 'EGX: 10:00 AM - 2:30 PM',
-            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-            onTap: () {},
-            isDark: isDark,
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Security Section
-          _buildSectionHeader(context, 'Security'),
-          _buildSettingTile(
-            context,
-            icon: Icons.fingerprint_rounded,
-            title: 'Biometric Lock',
-            subtitle: 'Secure app with fingerprint',
-            trailing: Switch(
-              value: false,
-              onChanged: (value) {},
-              activeColor: AppTheme.robinhoodGreen,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutScreen()),
             ),
-            isDark: isDark,
-          ),
-          _buildSettingTile(
-            context,
-            icon: Icons.lock_outline_rounded,
-            title: 'Change PIN',
-            subtitle: 'Update your security PIN',
-            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-            onTap: () {},
-            isDark: isDark,
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Data Section
-          _buildSectionHeader(context, 'Data'),
-          _buildSettingTile(
-            context,
-            icon: Icons.cloud_sync_rounded,
-            title: 'Sync Data',
-            subtitle: 'Last synced: Just now',
-            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-            onTap: () {},
             isDark: isDark,
           ),
           _buildSettingTile(
@@ -187,6 +421,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  String _formatLastUpdate(DateTime time) {
+    final now = DateTime.now();
+    final diff = now.difference(time);
+    
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
@@ -261,9 +505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Clear Cache'),
         content: const Text(
           'This will clear all cached data. Your personal settings will not be affected.',
@@ -290,16 +532,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  margin: const EdgeInsets.all(16),
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.robinhoodGreen,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Clear'),
           ),
