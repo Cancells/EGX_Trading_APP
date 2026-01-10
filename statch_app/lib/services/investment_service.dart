@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/investment.dart';
 import 'yahoo_finance_service.dart';
+import 'gold_service.dart';
 
 /// Service for managing user investments
 class InvestmentService {
@@ -12,6 +13,7 @@ class InvestmentService {
   static const String _storageKey = 'user_investments';
   
   final YahooFinanceService _yahooService = YahooFinanceService();
+  final GoldService _goldService = GoldService();
   SharedPreferences? _prefs;
   
   List<Investment> _investments = [];
@@ -89,6 +91,67 @@ class InvestmentService {
     return investment;
   }
 
+  /// Add investment with manual price entry
+  Future<Investment?> addInvestmentWithPrice({
+    required String symbol,
+    required String name,
+    required double quantity,
+    required DateTime purchaseDate,
+    required double purchasePrice,
+  }) async {
+    // Fetch current price
+    double currentPrice = purchasePrice;
+    
+    if (GoldService.isGoldSymbol(symbol)) {
+      currentPrice = _goldService.getPriceBySymbol(symbol) ?? purchasePrice;
+    } else {
+      final currentQuote = await _yahooService.fetchQuote(symbol);
+      currentPrice = currentQuote?.price ?? purchasePrice;
+    }
+
+    final investment = Investment(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      symbol: symbol,
+      name: name,
+      quantity: quantity,
+      purchaseDate: purchaseDate,
+      purchasePrice: purchasePrice,
+      currentPrice: currentPrice,
+    );
+
+    _investments.add(investment);
+    await _saveInvestments();
+    
+    return investment;
+  }
+
+  /// Add a gold investment
+  Future<Investment?> addGoldInvestment({
+    required String symbol,
+    required String name,
+    required double quantity,
+    required DateTime purchaseDate,
+    required double purchasePrice,
+    double? currentPrice,
+  }) async {
+    final goldCurrentPrice = currentPrice ?? _goldService.getPriceBySymbol(symbol) ?? purchasePrice;
+
+    final investment = Investment(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      symbol: symbol,
+      name: name,
+      quantity: quantity,
+      purchaseDate: purchaseDate,
+      purchasePrice: purchasePrice,
+      currentPrice: goldCurrentPrice,
+    );
+
+    _investments.add(investment);
+    await _saveInvestments();
+    
+    return investment;
+  }
+
   /// Remove an investment
   Future<void> removeInvestment(String id) async {
     _investments.removeWhere((inv) => inv.id == id);
@@ -125,17 +188,36 @@ class InvestmentService {
 
     bool hasChanges = false;
     
-    // Get unique symbols
-    final symbols = _investments.map((inv) => inv.symbol).toSet();
+    // Separate gold symbols from regular symbols
+    final goldSymbols = <String>{};
+    final regularSymbols = <String>{};
     
-    // Fetch quotes for all symbols
-    final quotes = await _yahooService.fetchMultipleQuotes(symbols.toList());
+    for (final inv in _investments) {
+      if (GoldService.isGoldSymbol(inv.symbol)) {
+        goldSymbols.add(inv.symbol);
+      } else {
+        regularSymbols.add(inv.symbol);
+      }
+    }
+    
+    // Fetch quotes for regular symbols
+    final quotes = await _yahooService.fetchMultipleQuotes(regularSymbols.toList());
 
     // Update investments with new prices
     for (int i = 0; i < _investments.length; i++) {
-      final quote = quotes[_investments[i].symbol];
-      if (quote != null && quote.price != _investments[i].currentPrice) {
-        _investments[i] = _investments[i].copyWith(currentPrice: quote.price);
+      final symbol = _investments[i].symbol;
+      double? newPrice;
+      
+      if (GoldService.isGoldSymbol(symbol)) {
+        // Get gold price from gold service
+        newPrice = _goldService.getPriceBySymbol(symbol);
+      } else {
+        // Get regular stock price from quotes
+        newPrice = quotes[symbol]?.price;
+      }
+      
+      if (newPrice != null && newPrice != _investments[i].currentPrice) {
+        _investments[i] = _investments[i].copyWith(currentPrice: newPrice);
         hasChanges = true;
       }
     }

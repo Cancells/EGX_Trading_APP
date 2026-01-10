@@ -12,10 +12,111 @@ class YahooFinanceService {
   
   // Egyptian Stock Exchange symbols (Cairo exchange uses .CA suffix)
   static const Map<String, String> egxSymbols = {
-    'COMI.CA': 'Commercial International Bank',
-    'TMGH.CA': 'Talaat Mostafa Group Holding',
+    // Banks
+    'COMI.CA': 'Commercial International Bank (CIB)',
+    'CIEB.CA': 'Credit Agricole Egypt',
+    'ADIB.CA': 'Abu Dhabi Islamic Bank',
+    'HDBK.CA': 'Housing & Development Bank',
+    
+    // Real Estate
+    'TMGH.CA': 'Talaat Moustafa Group',
+    'PHDC.CA': 'Palm Hills Developments',
+    'HELI.CA': 'Heliopolis Housing',
+    'ORHD.CA': 'Orascom Development',
+    'EMFD.CA': 'Emaar Misr',
+    'PORT.CA': 'Porto Group',
+    'ACAMD.CA': 'Arab Co. for Asset Management',
+    'MENA.CA': 'Mena Touristic & Real Estate',
+    
+    // Telecom
     'ETEL.CA': 'Telecom Egypt',
-    'FWRY.CA': 'Fawry for Banking Technology',
+    
+    // Fintech
+    'FWRY.CA': 'Fawry Banking & Payment',
+    
+    // Financial Services
+    'HRHO.CA': 'EFG Hermes',
+    'BTFH.CA': 'Beltone Financial',
+    'CNFN.CA': 'Contact Financial',
+    
+    // Investments
+    'EKHO.CA': 'Egypt Kuwait Holding',
+    'CCAP.CA': 'Qalaa Holdings',
+    'BINV.CA': 'B Investments',
+    'AIH.CA': 'Arabia Investments Holding',
+    'AMIA.CA': 'Arab Moltaqa Investments',
+    
+    // Basic Resources
+    'ABUK.CA': 'Abou Kir Fertilizers',
+    'MFPC.CA': 'Mopco Fertilizers',
+    'ESRS.CA': 'Ezz Steel',
+    'EGAL.CA': 'Egypt Aluminum',
+    'KIMA.CA': 'Egyptian Chemical Industries',
+    'ATQA.CA': 'Misr National Steel',
+    
+    // Industrial
+    'SWDY.CA': 'El Sewedy Electric',
+    
+    // Healthcare
+    'ISPH.CA': 'Ibnsina Pharma',
+    'CLHO.CA': 'Cleopatra Hospitals',
+    'RMDA.CA': 'Rameda Pharmaceuticals',
+    'SPMD.CA': 'Speed Medical',
+    'MPCI.CA': 'Memphis Pharmaceuticals',
+    
+    // Technology
+    'EFIH.CA': 'e-finance',
+    'RAYA.CA': 'Raya Holding',
+    'RACC.CA': 'Raya Contact Center',
+    
+    // Energy
+    'AMOC.CA': 'Alexandria Mineral Oils',
+    'SKPC.CA': 'Sidi Kerir Petrochemicals',
+    
+    // Food & Beverage
+    'JUFO.CA': 'Juhayna Food Industries',
+    'DOMT.CA': 'Arabian Food Ind. DOMTY',
+    'EFID.CA': 'Edita Food Industries',
+    'AJWA.CA': 'Ajwa Group',
+    'OLFI.CA': 'Obour Land',
+    'SCFM.CA': 'South Cairo & Giza Mills',
+    'ZEOT.CA': 'Extracted Oils',
+    'POUL.CA': 'Cairo Poultry',
+    'ADPC.CA': 'Arab Dairy - Panda',
+    'EIUD.CA': 'Upper Egypt Flour Mills',
+    
+    // Textiles
+    'ORWE.CA': 'Oriental Weavers',
+    'DSCW.CA': 'Dice Sport & Casual Wear',
+    
+    // Construction
+    'ORAS.CA': 'Orascom Construction',
+    'GGCC.CA': 'Giza General Contracting',
+    'UEGC.CA': 'Upper Egypt Contracting',
+    
+    // Building Materials
+    'ARCC.CA': 'Arabian Cement',
+    'MCQE.CA': 'Misr Cement Qena',
+    
+    // Automotive
+    'AUTO.CA': 'GB Auto',
+    
+    // Tobacco
+    'EAST.CA': 'Eastern Company',
+    
+    // Education
+    'CIRA.CA': 'Cairo Investment & Real Estate',
+    
+    // Tourism
+    'EGTS.CA': 'Egyptian Resorts',
+  };
+
+  // Precious Metals symbols (virtual tickers for gold tracking)
+  static const Map<String, String> preciousMetalsSymbols = {
+    'GOLD_24K': 'Gold 24K (Gram)',
+    'GOLD_21K': 'Gold 21K (Gram)',
+    'GOLD_18K': 'Gold 18K (Gram)',
+    'GOLD_POUND': 'Egyptian Gold Pound (8g)',
   };
 
   // EGX 30 Index
@@ -24,6 +125,20 @@ class YahooFinanceService {
   // Gold symbols
   static const String goldSpotSymbol = 'GC=F'; // Gold Futures
   static const String goldUsdSymbol = 'XAUUSD=X'; // Gold/USD
+
+  // Currency symbols
+  static const String usdEgpSymbol = 'EGP=X'; // USD to EGP
+
+  /// Check if a symbol is a gold/precious metal virtual ticker
+  static bool isGoldSymbol(String symbol) {
+    return preciousMetalsSymbols.containsKey(symbol);
+  }
+
+  /// Get all available symbols including gold
+  static Map<String, String> get allSymbols => {
+    ...preciousMetalsSymbols,
+    ...egxSymbols,
+  };
 
   /// Fetch current quote for a symbol
   Future<QuoteData?> fetchQuote(String symbol) async {

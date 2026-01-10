@@ -76,12 +76,20 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Initialize gold service
     _goldService.init();
+    _goldService.addListener(_onGoldServiceUpdate);
+  }
+
+  void _onGoldServiceUpdate() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _marketService.stopStreaming();
+    _goldService.removeListener(_onGoldServiceUpdate);
     _selectedPrice.dispose();
     _selectedIndex.dispose();
     super.dispose();
@@ -340,6 +348,12 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(height: 24),
                 ],
+
+                // Precious Metals Section (at top when EGX selected)
+                if (_selectedMarket == MarketType.egx30) ...[
+                  _buildPreciousMetalsSection(context, isDark),
+                  const SizedBox(height: 32),
+                ],
                 
                 // Portfolio Value Header
                 _buildPortfolioHeader(context, data),
@@ -351,10 +365,11 @@ class _HomeScreenState extends State<HomeScreen>
                 
                 const SizedBox(height: 32),
                 
-                // Gold Section (Egyptian Karats)
-                _buildGoldSection(context),
-                
-                const SizedBox(height: 32),
+                // Legacy Gold Section (when US selected or as backup)
+                if (_selectedMarket == MarketType.us) ...[
+                  _buildGoldSection(context),
+                  const SizedBox(height: 32),
+                ],
                 
                 // Stocks Section
                 Text(
@@ -377,6 +392,495 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPreciousMetalsSection(BuildContext context, bool isDark) {
+    final formatter = NumberFormat.currency(symbol: '', decimalDigits: 2);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header with Workmanship Toggle
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Precious Metals',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            // Per Gram Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Live',
+                style: TextStyle(
+                  color: AppTheme.goldPrimary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Workmanship Toggle
+        _buildWorkmanshipToggle(context, isDark),
+        
+        const SizedBox(height: 16),
+        
+        // Gold Price Cards
+        ListenableBuilder(
+          listenable: _goldService,
+          builder: (context, _) {
+            if (_goldService.isLoading && _goldService.prices.isEmpty) {
+              return _buildGoldLoadingState();
+            }
+            
+            if (_goldService.prices.isEmpty) {
+              // Fallback to mock data
+              return Column(
+                children: [
+                  GoldCard(goldPrice: _marketData!.gold24k),
+                  const SizedBox(height: 12),
+                  GoldCard(goldPrice: _marketData!.gold21k),
+                ],
+              );
+            }
+            
+            return Column(
+              children: [
+                // 24K Gold
+                _buildPreciousMetalCard(
+                  context,
+                  isDark,
+                  title: 'Gold 24K',
+                  subtitle: 'Pure Gold',
+                  price: _goldService.getDisplayPrice(GoldKarat.k24),
+                  rawPrice: _goldService.prices[GoldKarat.k24]?.pricePerGram ?? 0,
+                  changePercent: _goldService.prices[GoldKarat.k24]?.changePercent ?? 0,
+                  isPositive: _goldService.prices[GoldKarat.k24]?.isPositive ?? true,
+                  formatter: formatter,
+                ),
+                const SizedBox(height: 12),
+                
+                // 21K Gold
+                _buildPreciousMetalCard(
+                  context,
+                  isDark,
+                  title: 'Gold 21K',
+                  subtitle: 'Egyptian Standard',
+                  price: _goldService.getDisplayPrice(GoldKarat.k21),
+                  rawPrice: _goldService.prices[GoldKarat.k21]?.pricePerGram ?? 0,
+                  changePercent: _goldService.prices[GoldKarat.k21]?.changePercent ?? 0,
+                  isPositive: _goldService.prices[GoldKarat.k21]?.isPositive ?? true,
+                  formatter: formatter,
+                ),
+                const SizedBox(height: 12),
+                
+                // 18K Gold
+                _buildPreciousMetalCard(
+                  context,
+                  isDark,
+                  title: 'Gold 18K',
+                  subtitle: 'Jewelry Gold',
+                  price: _goldService.getDisplayPrice(GoldKarat.k18),
+                  rawPrice: _goldService.prices[GoldKarat.k18]?.pricePerGram ?? 0,
+                  changePercent: _goldService.prices[GoldKarat.k18]?.changePercent ?? 0,
+                  isPositive: _goldService.prices[GoldKarat.k18]?.isPositive ?? true,
+                  formatter: formatter,
+                ),
+                const SizedBox(height: 12),
+                
+                // Gold Pound (Geneh)
+                if (_goldService.goldPoundPrice != null)
+                  _buildGoldPoundCard(context, isDark, formatter),
+              ],
+            );
+          },
+        ),
+        
+        // Exchange Rate Info
+        ListenableBuilder(
+          listenable: _goldService,
+          builder: (context, _) {
+            if (_goldService.usdToEgp > 0 && _goldService.goldSpotUsd > 0) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.05) 
+                        : Colors.black.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 16, color: AppTheme.mutedText),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Gold Spot: \$${_goldService.goldSpotUsd.toStringAsFixed(2)}/oz • USD/EGP: ${_goldService.usdToEgp.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.mutedText,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWorkmanshipToggle(BuildContext context, bool isDark) {
+    return ListenableBuilder(
+      listenable: _goldService,
+      builder: (context, _) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark 
+                ? Colors.white.withValues(alpha: 0.05) 
+                : Colors.black.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(12),
+            border: _goldService.includeWorkmanship
+                ? Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5), width: 1)
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.construction_rounded,
+                size: 20,
+                color: _goldService.includeWorkmanship 
+                    ? AppTheme.goldPrimary 
+                    : AppTheme.mutedText,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Workmanship',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: _goldService.includeWorkmanship 
+                            ? AppTheme.goldPrimary 
+                            : null,
+                      ),
+                    ),
+                    Text(
+                      _goldService.includeWorkmanship
+                          ? 'Shop Buying Price (+${_goldService.workmanshipFee.toStringAsFixed(0)} EGP/g)'
+                          : 'Raw Market Price',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.mutedText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _goldService.includeWorkmanship,
+                onChanged: (value) => _goldService.setWorkmanship(value),
+                activeColor: AppTheme.goldPrimary,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPreciousMetalCard(
+    BuildContext context,
+    bool isDark, {
+    required String title,
+    required String subtitle,
+    required double price,
+    required double rawPrice,
+    required double changePercent,
+    required bool isPositive,
+    required NumberFormat formatter,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [const Color(0xFF2D2408), const Color(0xFF1A1505)]
+              : [const Color(0xFFFFF8E1), const Color(0xFFFFECB3)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.goldPrimary.withValues(alpha: isDark ? 0.3 : 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.workspace_premium_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isDark ? AppTheme.goldPrimary : const Color(0xFF8B6914),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.mutedText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${formatter.format(price)} EGP',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (_goldService.includeWorkmanship && rawPrice > 0)
+                Text(
+                  'Raw: ${formatter.format(rawPrice)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.mutedText,
+                    fontSize: 10,
+                  ),
+                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPositive
+                        ? Icons.arrow_upward_rounded
+                        : Icons.arrow_downward_rounded,
+                    size: 14,
+                    color: isPositive
+                        ? AppTheme.robinhoodGreen
+                        : AppTheme.robinhoodRed,
+                  ),
+                  Text(
+                    '${isPositive ? '+' : ''}${changePercent.toStringAsFixed(2)}%',
+                    style: TextStyle(
+                      color: isPositive
+                          ? AppTheme.robinhoodGreen
+                          : AppTheme.robinhoodRed,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoldPoundCard(BuildContext context, bool isDark, NumberFormat formatter) {
+    final poundPrice = _goldService.goldPoundPrice!;
+    final displayPrice = _goldService.getGoldPoundDisplayPrice();
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [const Color(0xFF2D2408), const Color(0xFF1A1505), const Color(0xFF0D0A02)]
+              : [const Color(0xFFFFF8E1), const Color(0xFFFFECB3), const Color(0xFFFFE082)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.goldPrimary.withValues(alpha: isDark ? 0.4 : 0.6),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFD700), Color(0xFFFFA500), Color(0xFFDAA520)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.monetization_on_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Gold Pound (Geneh)',
+                  style: TextStyle(
+                    color: isDark ? AppTheme.goldPrimary : const Color(0xFF8B6914),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  '8 grams of 21K gold',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.mutedText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${formatter.format(displayPrice)} EGP',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (_goldService.includeWorkmanship)
+                Text(
+                  'Raw: ${formatter.format(poundPrice.price)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.mutedText,
+                    fontSize: 10,
+                  ),
+                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    poundPrice.isPositive
+                        ? Icons.arrow_upward_rounded
+                        : Icons.arrow_downward_rounded,
+                    size: 14,
+                    color: poundPrice.isPositive
+                        ? AppTheme.robinhoodGreen
+                        : AppTheme.robinhoodRed,
+                  ),
+                  Text(
+                    '${poundPrice.isPositive ? '+' : ''}${poundPrice.changePercent.toStringAsFixed(2)}%',
+                    style: TextStyle(
+                      color: poundPrice.isPositive
+                          ? AppTheme.robinhoodGreen
+                          : AppTheme.robinhoodRed,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoldLoadingState() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.goldPrimary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Center(
+        child: Column(
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(AppTheme.goldPrimary),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Loading gold prices...',
+              style: TextStyle(color: AppTheme.mutedText),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -18,13 +18,19 @@ class MarketDataService {
   static const double _baseEgx30 = 41500.0;
   static const double _baseGold24k = 6850.0;
   static const double _baseGold21k = 6000.0;
+  static const double _baseGold18k = 5140.0;
+  static const double _baseGoldPound = 48000.0; // 8g of 21K
   
   // Stock base prices in EGP
   static const Map<String, Map<String, dynamic>> _stockData = {
-    'COMI': {'name': 'Commercial International Bank', 'basePrice': 98.50},
-    'TMGH': {'name': 'Talaat Mostafa Group Holding', 'basePrice': 45.20},
-    'ETEL': {'name': 'Telecom Egypt', 'basePrice': 32.80},
-    'FWRY': {'name': 'Fawry for Banking Technology', 'basePrice': 8.75},
+    'COMI': {'name': 'Commercial International Bank', 'basePrice': 98.50, 'sector': 'Banks'},
+    'TMGH': {'name': 'Talaat Mostafa Group Holding', 'basePrice': 45.20, 'sector': 'Real Estate'},
+    'ETEL': {'name': 'Telecom Egypt', 'basePrice': 32.80, 'sector': 'Telecom'},
+    'FWRY': {'name': 'Fawry for Banking Technology', 'basePrice': 8.75, 'sector': 'Fintech'},
+    'HRHO': {'name': 'EFG Hermes', 'basePrice': 22.50, 'sector': 'Financial Services'},
+    'SWDY': {'name': 'El Sewedy Electric', 'basePrice': 18.30, 'sector': 'Industrial'},
+    'ABUK': {'name': 'Abou Kir Fertilizers', 'basePrice': 35.60, 'sector': 'Basic Resources'},
+    'PHDC': {'name': 'Palm Hills Developments', 'basePrice': 4.85, 'sector': 'Real Estate'},
   };
 
   MarketData? _currentData;
@@ -72,6 +78,7 @@ class MarketDataService {
       change: gold24kChange,
       changePercent: (gold24kChange / _baseGold24k) * 100,
       lastUpdated: now,
+      description: 'Pure Gold',
     );
     
     // Gold 21K
@@ -81,6 +88,27 @@ class MarketDataService {
       pricePerGram: _baseGold21k + gold21kChange,
       change: gold21kChange,
       changePercent: (gold21kChange / _baseGold21k) * 100,
+      lastUpdated: now,
+      description: 'Egyptian Standard',
+    );
+    
+    // Gold 18K
+    final gold18kChange = (_random.nextDouble() - 0.45) * 35;
+    final gold18k = GoldPrice(
+      karat: '18K',
+      pricePerGram: _baseGold18k + gold18kChange,
+      change: gold18kChange,
+      changePercent: (gold18kChange / _baseGold18k) * 100,
+      lastUpdated: now,
+      description: 'Jewelry Gold',
+    );
+    
+    // Gold Pound (Geneh) - 8 grams of 21K
+    final goldPoundChange = gold21kChange * 8;
+    final goldPound = GoldPoundPriceData(
+      price: _baseGoldPound + goldPoundChange,
+      change: goldPoundChange,
+      changePercent: (goldPoundChange / _baseGoldPound) * 100,
       lastUpdated: now,
     );
     
@@ -99,6 +127,7 @@ class MarketDataService {
         changePercent: (change / history.first) * 100,
         priceHistory: history,
         lastUpdated: now,
+        sector: entry.value['sector'] as String?,
       );
     }).toList();
     
@@ -106,6 +135,8 @@ class MarketDataService {
       egx30: egx30,
       gold24k: gold24k,
       gold21k: gold21k,
+      gold18k: gold18k,
+      goldPound: goldPound,
       stocks: stocks,
       lastUpdated: now,
     );
@@ -146,6 +177,24 @@ class MarketDataService {
       lastUpdated: now,
     );
     
+    // Update Gold 18K
+    final gold18kPriceChange = ((_random.nextDouble() - 0.48) * 3.5);
+    final gold18k = current.gold18k?.copyWith(
+      pricePerGram: (current.gold18k?.pricePerGram ?? _baseGold18k) + gold18kPriceChange,
+      change: (current.gold18k?.change ?? 0) + gold18kPriceChange,
+      changePercent: (((current.gold18k?.change ?? 0) + gold18kPriceChange) / _baseGold18k) * 100,
+      lastUpdated: now,
+    );
+    
+    // Update Gold Pound
+    final goldPoundPriceChange = gold21kPriceChange * 8;
+    final goldPound = current.goldPound?.copyWith(
+      price: (current.goldPound?.price ?? _baseGoldPound) + goldPoundPriceChange,
+      change: (current.goldPound?.change ?? 0) + goldPoundPriceChange,
+      changePercent: (((current.goldPound?.change ?? 0) + goldPoundPriceChange) / _baseGoldPound) * 100,
+      lastUpdated: now,
+    );
+    
     // Update Stocks
     final stocks = current.stocks.map((stock) {
       final priceChange = ((_random.nextDouble() - 0.48) * 0.005 * stock.price);
@@ -166,6 +215,8 @@ class MarketDataService {
       egx30: egx30,
       gold24k: gold24k,
       gold21k: gold21k,
+      gold18k: gold18k,
+      goldPound: goldPound,
       stocks: stocks,
       lastUpdated: now,
     );
