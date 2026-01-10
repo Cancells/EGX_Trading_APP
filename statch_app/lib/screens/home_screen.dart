@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../models/market_data.dart';
 import '../services/market_data_service.dart';
@@ -16,12 +17,7 @@ import 'about_screen.dart';
 
 /// Home Screen (Dashboard) - Robinhood Style with Market Switcher
 class HomeScreen extends StatefulWidget {
-  final VoidCallback onThemeToggle;
-
-  const HomeScreen({
-    super.key,
-    required this.onThemeToggle,
-  });
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -95,6 +91,53 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  /// Build profile avatar - shows icon if no custom name/photo set
+  Widget _buildProfileAvatar(double radius) {
+    final hasCustomName = _prefsService.userName.isNotEmpty && 
+                          _prefsService.userName != 'Investor';
+    final hasCustomPhoto = _prefsService.customAvatarPath != null;
+    
+    if (hasCustomPhoto) {
+      // TODO: Show custom photo from file
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: AppTheme.robinhoodGreen,
+        child: Text(
+          _prefsService.userName[0].toUpperCase(),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: radius * 0.8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    } else if (hasCustomName) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: AppTheme.robinhoodGreen,
+        child: Text(
+          _prefsService.userName[0].toUpperCase(),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: radius * 0.8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    } else {
+      // Show icon for default user
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: AppTheme.robinhoodGreen.withValues(alpha: 0.2),
+        child: Icon(
+          Icons.person_rounded,
+          color: AppTheme.robinhoodGreen,
+          size: radius * 1.2,
+        ),
+      );
+    }
+  }
+
   void _showProfileMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -132,20 +175,7 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 Hero(
                   tag: 'profile_avatar',
-                  child: CircleAvatar(
-                    radius: 28,
-                    backgroundColor: AppTheme.robinhoodGreen,
-                    child: Text(
-                      _prefsService.userName.isNotEmpty 
-                          ? _prefsService.userName[0].toUpperCase()
-                          : 'I',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  child: _buildProfileAvatar(28),
                 ),
                 const SizedBox(width: 16),
                 Column(
@@ -292,20 +322,7 @@ class _HomeScreenState extends State<HomeScreen>
                 onTap: () => _showProfileMenu(context),
                 child: Hero(
                   tag: 'profile_menu_avatar',
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: AppTheme.robinhoodGreen,
-                    child: Text(
-                      _prefsService.userName.isNotEmpty 
-                          ? _prefsService.userName[0].toUpperCase()
-                          : 'I',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  child: _buildProfileAvatar(20),
                 ),
               ),
             ),
@@ -381,9 +398,12 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                ...data.stocks.map((stock) => Padding(
+                ...data.stocks.asMap().entries.map((entry) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: StockCard(stock: stock),
+                  child: StockCard(stock: entry.value)
+                      .animate(delay: Duration(milliseconds: 50 * entry.key))
+                      .fadeIn(duration: const Duration(milliseconds: 300))
+                      .slideX(begin: 0.1, end: 0, duration: const Duration(milliseconds: 300)),
                 )),
                 
                 const SizedBox(height: 40),

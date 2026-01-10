@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../models/investment.dart';
 import '../services/investment_service.dart';
@@ -196,7 +197,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                               currencyFormat, 
                               isDark,
                             ),
-                          );
+                          )
+                              .animate(delay: Duration(milliseconds: 50 * index))
+                              .fadeIn(duration: const Duration(milliseconds: 300))
+                              .slideX(begin: 0.1, end: 0, duration: const Duration(milliseconds: 300));
                         },
                         childCount: _investments.where((inv) => GoldService.isGoldSymbol(inv.symbol)).length,
                       ),
@@ -278,7 +282,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                               currencyFormat, 
                               isDark,
                             ),
-                          );
+                          )
+                              .animate(delay: Duration(milliseconds: 50 * index))
+                              .fadeIn(duration: const Duration(milliseconds: 300))
+                              .slideX(begin: 0.1, end: 0, duration: const Duration(milliseconds: 300));
                         },
                         childCount: _investments.where((inv) => !GoldService.isGoldSymbol(inv.symbol)).length,
                       ),

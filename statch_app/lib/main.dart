@@ -7,10 +7,12 @@ import 'services/preferences_service.dart';
 import 'services/investment_service.dart';
 import 'services/pin_service.dart';
 import 'services/currency_service.dart';
+import 'services/cache_service.dart';
 import 'theme/dynamic_theme.dart';
 import 'widgets/error_overlay.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/security_gate_screen.dart';
+import 'screens/app_loading_screen.dart';
 import 'screens/main_shell.dart';
 
 void main() {
@@ -23,13 +25,18 @@ void main() {
     await PinService().init();
     await CurrencyService().init();
     
-    // Set system UI overlay style
+    // Initialize theme provider with saved preferences
+    final themeProvider = DynamicThemeProvider();
+    themeProvider.init();
+    
+    // Set system UI overlay style based on theme
+    final isDark = themeProvider.themeSetting == ThemeSetting.dark;
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
+      SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.black,
-        systemNavigationBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: isDark ? Colors.black : Colors.white,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
     );
     
@@ -42,7 +49,7 @@ void main() {
     runApp(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => DynamicThemeProvider()),
+          ChangeNotifierProvider.value(value: themeProvider),
           ChangeNotifierProvider(create: (_) => CurrencyService()),
         ],
         child: const StatchApp(),
@@ -70,13 +77,11 @@ class _StatchAppState extends State<StatchApp> {
   final PreferencesService _prefsService = PreferencesService();
   final PinService _pinService = PinService();
   
-  late ThemeMode _themeMode;
   AppState _appState = AppState.loading;
 
   @override
   void initState() {
     super.initState();
-    _themeMode = _prefsService.isDarkMode ? ThemeMode.dark : ThemeMode.light;
     _initializeApp();
   }
 
@@ -84,44 +89,42 @@ class _StatchAppState extends State<StatchApp> {
     // Determine initial app state
     if (!_prefsService.hasSeenWelcome) {
       setState(() => _appState = AppState.welcome);
-    } else if (_pinService.isSecurityEnabled && (_pinService.isPinSet || _pinService.isBiometricEnabled)) {
-      setState(() => _appState = AppState.securityGate);
     } else {
-      setState(() => _appState = AppState.authenticated);
+      // Show loading screen for data initialization
+      setState(() => _appState = AppState.loading);
     }
   }
 
-  void _toggleTheme() {
-    setState(() {
-      _themeMode = _prefsService.isDarkMode ? ThemeMode.dark : ThemeMode.light;
-      
-      // Update system UI overlay style based on theme
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: _themeMode == ThemeMode.dark 
-              ? Brightness.light 
-              : Brightness.dark,
-          systemNavigationBarColor: _themeMode == ThemeMode.dark 
-              ? Colors.black 
-              : Colors.white,
-          systemNavigationBarIconBrightness: _themeMode == ThemeMode.dark 
-              ? Brightness.light 
-              : Brightness.dark,
-        ),
-      );
-    });
+  void _updateSystemUI(DynamicThemeProvider themeProvider) {
+    final brightness = themeProvider.themeSetting == ThemeSetting.dark
+        ? Brightness.dark
+        : themeProvider.themeSetting == ThemeSetting.light
+            ? Brightness.light
+            : MediaQuery.of(context).platformBrightness;
+    
+    final isDark = brightness == Brightness.dark;
+    
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: isDark ? Colors.black : Colors.white,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      ),
+    );
   }
 
   void _onWelcomeComplete() async {
     await _prefsService.setHasSeenWelcome(true);
-    
-    // Check if security should be shown
-    if (_pinService.isSecurityEnabled && (_pinService.isPinSet || _pinService.isBiometricEnabled)) {
-      setState(() => _appState = AppState.securityGate);
-    } else {
-      setState(() => _appState = AppState.authenticated);
-    }
+    setState(() => _appState = AppState.loading);
+  }
+
+  void _onLoadingComplete() {
+    setState(() => _appState = AppState.authenticated);
+  }
+
+  void _onSecurityRequired() {
+    setState(() => _appState = AppState.securityGate);
   }
 
   void _onAuthenticated() {
@@ -136,6 +139,7 @@ class _StatchAppState extends State<StatchApp> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final themeProvider = context.read<DynamicThemeProvider>();
           themeProvider.setDynamicSchemes(lightDynamic, darkDynamic);
+          _updateSystemUI(themeProvider);
         });
 
         return Consumer<DynamicThemeProvider>(
@@ -145,7 +149,7 @@ class _StatchAppState extends State<StatchApp> {
               debugShowCheckedModeBanner: false,
               theme: themeProvider.getLightTheme(),
               darkTheme: themeProvider.getDarkTheme(),
-              themeMode: _themeMode,
+              themeMode: themeProvider.themeMode,
               builder: (context, child) {
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(
@@ -167,15 +171,16 @@ class _StatchAppState extends State<StatchApp> {
   Widget _buildHomeWidget() {
     switch (_appState) {
       case AppState.loading:
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
+        return AppLoadingScreen(
+          onComplete: _onLoadingComplete,
+          onSecurityRequired: _onSecurityRequired,
         );
       case AppState.welcome:
         return WelcomeScreen(onGetStarted: _onWelcomeComplete);
       case AppState.securityGate:
         return SecurityGateScreen(onAuthenticated: _onAuthenticated);
       case AppState.authenticated:
-        return MainShell(onThemeToggle: _toggleTheme);
+        return const MainShell();
     }
   }
 }

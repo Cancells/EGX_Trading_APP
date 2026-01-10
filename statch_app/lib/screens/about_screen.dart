@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/statch_logo.dart';
+import 'legal_screen.dart';
 
 /// About Screen with app version and credits
 class AboutScreen extends StatelessWidget {
@@ -64,7 +65,7 @@ class AboutScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Text(
-                'Version 1.0.0',
+                'Version 2.0.0',
                 style: TextStyle(
                   color: AppTheme.robinhoodGreen,
                   fontWeight: FontWeight.w600,
@@ -92,22 +93,27 @@ class AboutScreen extends StatelessWidget {
                 const _FeatureItem(
                   icon: Icons.show_chart_rounded,
                   title: 'Real-time Charts',
-                  description: 'Track EGX 30 and Egyptian stocks',
+                  description: 'Track EGX 30 and 60+ Egyptian stocks',
                 ),
                 const _FeatureItem(
                   icon: Icons.workspace_premium_rounded,
-                  title: 'Gold Prices',
-                  description: 'Live 21K and 24K gold prices',
+                  title: 'Egyptian Gold Prices',
+                  description: 'Live 24K, 21K, 18K & Gold Pound prices',
                 ),
                 const _FeatureItem(
-                  icon: Icons.notifications_active_rounded,
-                  title: 'Price Alerts',
-                  description: 'Get notified on market movements',
+                  icon: Icons.account_balance_wallet_rounded,
+                  title: 'Portfolio Tracking',
+                  description: 'Track stocks & gold investments with P/L',
                 ),
                 const _FeatureItem(
-                  icon: Icons.dark_mode_rounded,
-                  title: 'Dark Mode',
-                  description: 'Beautiful dark and light themes',
+                  icon: Icons.construction_rounded,
+                  title: 'Workmanship Toggle',
+                  description: 'Calculate shop buying prices',
+                ),
+                const _FeatureItem(
+                  icon: Icons.palette_rounded,
+                  title: 'Themes',
+                  description: 'Light, Dark, and Material You support',
                 ),
               ],
               isDark: isDark,
@@ -126,16 +132,26 @@ class AboutScreen extends StatelessWidget {
               title: 'Legal',
               items: [
                 _LegalItem(
-                  title: 'Terms of Service',
-                  onTap: () {},
+                  title: 'Terms & Conditions',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LegalScreen()),
+                  ),
                 ),
                 _LegalItem(
-                  title: 'Privacy Policy',
-                  onTap: () {},
+                  title: 'Service Usage & Data Delay',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LegalScreen()),
+                  ),
                 ),
                 _LegalItem(
                   title: 'Licenses',
-                  onTap: () {},
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: 'Statch',
+                    applicationVersion: '2.0.0',
+                  ),
                 ),
               ],
               isDark: isDark,
