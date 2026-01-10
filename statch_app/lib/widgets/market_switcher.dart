@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
+import '../services/multi_market_service.dart';
 import '../theme/app_theme.dart';
 
-/// Market type enumeration
-enum MarketType {
-  egx30('EGX 30', 'Egyptian Index'),
-  egx100('EGX 100', 'Extended Egyptian'),
-  us('US', 'NYSE/NASDAQ');
-
-  final String label;
-  final String description;
-
-  const MarketType(this.label, this.description);
-}
+// Re-export MarketType for backwards compatibility
+export '../services/multi_market_service.dart' show MarketType, MarketTypeConfig;
 
 /// Market Switcher Widget - Segmented Button Style
 class MarketSwitcher extends StatelessWidget {
@@ -61,20 +53,33 @@ class MarketSwitcher extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      market.label,
-                      style: TextStyle(
-                        color: isSelected
-                            ? AppTheme.robinhoodGreen
-                            : AppTheme.mutedText,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          market.icon,
+                          size: 16,
+                          color: isSelected
+                              ? AppTheme.robinhoodGreen
+                              : AppTheme.mutedText,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          market.displayName,
+                          style: TextStyle(
+                            color: isSelected
+                                ? AppTheme.robinhoodGreen
+                                : AppTheme.mutedText,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                     if (isSelected) ...[
                       const SizedBox(height: 2),
                       Text(
-                        market.description,
+                        market.fullName,
                         style: const TextStyle(
                           color: AppTheme.mutedText,
                           fontSize: 10,
@@ -105,9 +110,13 @@ class MarketTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final multiMarketService = MultiMarketService();
+
     return Row(
       children: MarketType.values.map((market) {
         final isSelected = market == selected;
+        final marketHours = multiMarketService.getMarketHours(market);
         
         return Expanded(
           child: InkWell(
@@ -116,26 +125,57 @@ class MarketTabBar extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
                     children: [
-                      Icon(
-                        _getMarketIcon(market),
-                        size: 18,
-                        color: isSelected
-                            ? AppTheme.robinhoodGreen
-                            : AppTheme.mutedText,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            market.icon,
+                            size: 18,
+                            color: isSelected
+                                ? AppTheme.robinhoodGreen
+                                : AppTheme.mutedText,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            market.displayName,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? AppTheme.robinhoodGreen
+                                  : AppTheme.mutedText,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        market.label,
-                        style: TextStyle(
-                          color: isSelected
-                              ? AppTheme.robinhoodGreen
-                              : AppTheme.mutedText,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          fontSize: 14,
-                        ),
+                      const SizedBox(height: 4),
+                      // Market status indicator
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: marketHours.isOpen
+                                  ? AppTheme.robinhoodGreen
+                                  : AppTheme.mutedText,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            marketHours.status,
+                            style: TextStyle(
+                              color: marketHours.isOpen
+                                  ? AppTheme.robinhoodGreen
+                                  : AppTheme.mutedText,
+                              fontSize: 9,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -155,15 +195,93 @@ class MarketTabBar extends StatelessWidget {
       }).toList(),
     );
   }
+}
 
-  IconData _getMarketIcon(MarketType market) {
-    switch (market) {
-      case MarketType.egx30:
-        return Icons.show_chart_rounded;
-      case MarketType.egx100:
-        return Icons.trending_up_rounded;
-      case MarketType.us:
-        return Icons.language_rounded;
-    }
+/// Compact market selector (for app bar)
+class CompactMarketSelector extends StatelessWidget {
+  final MarketType selected;
+  final ValueChanged<MarketType> onChanged;
+
+  const CompactMarketSelector({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<MarketType>(
+      initialValue: selected,
+      onSelected: onChanged,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppTheme.robinhoodGreen.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              selected.icon,
+              size: 16,
+              color: AppTheme.robinhoodGreen,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              selected.displayName,
+              style: const TextStyle(
+                color: AppTheme.robinhoodGreen,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: AppTheme.robinhoodGreen,
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => MarketType.values.map((market) {
+        return PopupMenuItem<MarketType>(
+          value: market,
+          child: Row(
+            children: [
+              Icon(
+                market.icon,
+                size: 18,
+                color: market == selected
+                    ? AppTheme.robinhoodGreen
+                    : AppTheme.mutedText,
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    market.displayName,
+                    style: TextStyle(
+                      fontWeight: market == selected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                  Text(
+                    market.fullName,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.mutedText,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
   }
 }

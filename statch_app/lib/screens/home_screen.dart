@@ -6,6 +6,7 @@ import '../services/market_data_service.dart';
 import '../services/preferences_service.dart';
 import '../services/gold_service.dart';
 import '../services/realtime_stock_service.dart';
+import '../services/multi_market_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gold_card.dart';
 import '../widgets/price_chart.dart';
@@ -30,23 +31,17 @@ class _HomeScreenState extends State<HomeScreen>
   final PreferencesService _prefsService = PreferencesService();
   final GoldService _goldService = GoldService();
   final RealTimeStockService _realTimeService = RealTimeStockService();
+  final MultiMarketService _multiMarketService = MultiMarketService();
   
   final ValueNotifier<double?> _selectedPrice = ValueNotifier(null);
   final ValueNotifier<int?> _selectedIndex = ValueNotifier(null);
   
   MarketData? _marketData;
-  MarketType _selectedMarket = MarketType.egx30;
+  MarketType _selectedMarket = MarketType.egx;
+  List<Stock> _currentStocks = [];
+  bool _isLoadingMarket = false;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-
-  // US Market stocks
-  final List<StockChipData> _usStocks = [
-    StockChipData(symbol: 'AAPL', name: 'Apple Inc.', price: 178.50, changePercent: 1.24),
-    StockChipData(symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.80, changePercent: -0.56),
-    StockChipData(symbol: 'MSFT', name: 'Microsoft Corp.', price: 378.90, changePercent: 0.89),
-    StockChipData(symbol: 'AMZN', name: 'Amazon.com Inc.', price: 178.25, changePercent: 1.67),
-    StockChipData(symbol: 'TSLA', name: 'Tesla Inc.', price: 248.50, changePercent: -2.34),
-  ];
 
   @override
   void initState() {
@@ -62,6 +57,12 @@ class _HomeScreenState extends State<HomeScreen>
       curve: Curves.easeOut,
     );
     
+    // Initialize multi-market service
+    _multiMarketService.init().then((_) {
+      _multiMarketService.addListener(_onMultiMarketUpdate);
+      _loadMarketData();
+    });
+    
     _marketService.startStreaming();
     _marketService.marketDataStream.listen((data) {
       if (mounted) {
@@ -71,8 +72,10 @@ class _HomeScreenState extends State<HomeScreen>
         if (!_fadeController.isCompleted) {
           _fadeController.forward();
         }
-        // Start tracking visible stocks for real-time updates
-        _startRealTimeTracking(data);
+        // Start tracking visible stocks for real-time updates if on EGX
+        if (_selectedMarket == MarketType.egx) {
+          _startRealTimeTracking(data);
+        }
       }
     });
 
@@ -81,9 +84,76 @@ class _HomeScreenState extends State<HomeScreen>
     _goldService.addListener(_onGoldServiceUpdate);
   }
 
-  void _startRealTimeTracking(MarketData data) {
+  void _onMultiMarketUpdate() {
+    if (mounted) {
+      setState(() {
+        _isLoadingMarket = _multiMarketService.isLoading;
+      });
+    }
+  }
+
+  Future<void> _loadMarketData() async {
+    setState(() => _isLoadingMarket = true);
+    
+    await _multiMarketService.fetchQuotes();
+    
+    if (mounted) {
+      _updateCurrentStocks();
+      setState(() => _isLoadingMarket = false);
+    }
+  }
+
+  void _updateCurrentStocks() {
+    final tickers = _multiMarketService.getTickers(_selectedMarket);
+    final stocks = <Stock>[];
+    
+    for (final ticker in tickers) {
+      final quote = _multiMarketService.getQuote(ticker.symbol);
+      stocks.add(Stock(
+        symbol: ticker.symbol,
+        name: ticker.name,
+        price: quote?.price ?? 0,
+        change: quote?.change ?? 0,
+        changePercent: quote?.changePercent ?? 0,
+        priceHistory: quote?.priceHistory ?? [],
+        lastUpdated: DateTime.now(),
+        sector: ticker.sector,
+        currencySymbol: _selectedMarket.currencySymbol,
+        decimals: ticker.decimals,
+        marketType: _selectedMarket.name,
+      ));
+    }
+    
+    setState(() {
+      _currentStocks = stocks;
+    });
+    
+    // Start real-time tracking for current stocks
+    _startRealTimeTracking(null);
+  }
+
+  Future<void> _onMarketChanged(MarketType market) async {
+    if (market == _selectedMarket) return;
+    
+    setState(() {
+      _selectedMarket = market;
+      _isLoadingMarket = true;
+    });
+    
+    await _multiMarketService.switchMarket(market);
+    _updateCurrentStocks();
+    
+    setState(() => _isLoadingMarket = false);
+  }
+
+  void _startRealTimeTracking(MarketData? data) {
     // Get all stock symbols to track
-    final symbols = data.stocks.map((s) => s.symbol).toList();
+    List<String> symbols;
+    if (_selectedMarket == MarketType.egx && data != null) {
+      symbols = data.stocks.map((s) => s.symbol).toList();
+    } else {
+      symbols = _currentStocks.map((s) => s.symbol).toList();
+    }
     _realTimeService.startTracking(symbols);
   }
 
@@ -99,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen>
     _fadeController.dispose();
     _marketService.stopStreaming();
     _goldService.removeListener(_onGoldServiceUpdate);
+    _multiMarketService.removeListener(_onMultiMarketUpdate);
     _realTimeService.stopTrackingAll();
     _selectedPrice.dispose();
     _selectedIndex.dispose();
@@ -358,12 +429,10 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 const SizedBox(height: 16),
                 
-                // Market Switcher
+                // Market Switcher (EGX, US, Crypto)
                 MarketSwitcher(
                   selected: _selectedMarket,
-                  onChanged: (market) {
-                    setState(() => _selectedMarket = market);
-                  },
+                  onChanged: _onMarketChanged,
                 ),
                 
                 const SizedBox(height: 24),
@@ -387,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
 
                 // Precious Metals Section (at top when EGX selected)
-                if (_selectedMarket == MarketType.egx30) ...[
+                if (_selectedMarket == MarketType.egx) ...[
                   _buildPreciousMetalsSection(context, isDark),
                   const SizedBox(height: 32),
                 ],
@@ -408,29 +477,142 @@ class _HomeScreenState extends State<HomeScreen>
                   const SizedBox(height: 32),
                 ],
                 
-                // Stocks Section
-                Text(
-                  _selectedMarket == MarketType.us 
-                      ? 'US Stocks' 
-                      : 'Egyptian Stocks',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...data.stocks.asMap().entries.map((entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: StockCard(stock: entry.value)
-                      .animate(delay: Duration(milliseconds: 50 * entry.key))
-                      .fadeIn(duration: const Duration(milliseconds: 300))
-                      .slideX(begin: 0.1, end: 0, duration: const Duration(milliseconds: 300)),
-                )),
+                // Stocks Section with market-specific title
+                _buildStocksSection(context, data),
                 
                 const SizedBox(height: 40),
               ],
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildStocksSection(BuildContext context, MarketData data) {
+    // Determine which stocks to show based on selected market
+    List<Stock> stocksToShow;
+    String sectionTitle;
+    
+    switch (_selectedMarket) {
+      case MarketType.egx:
+        stocksToShow = data.stocks;
+        sectionTitle = 'Egyptian Stocks';
+        break;
+      case MarketType.us:
+        stocksToShow = _currentStocks;
+        sectionTitle = 'US Stocks';
+        break;
+      case MarketType.crypto:
+        stocksToShow = _currentStocks;
+        sectionTitle = 'Cryptocurrencies';
+        break;
+    }
+    
+    // Get market hours for status display
+    final marketHours = _multiMarketService.getMarketHours(_selectedMarket);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header with market status
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _selectedMarket.icon,
+                  size: 24,
+                  color: AppTheme.robinhoodGreen,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  sectionTitle,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            // Market status badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: marketHours.isOpen
+                    ? AppTheme.robinhoodGreen.withValues(alpha: 0.15)
+                    : Colors.grey.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: marketHours.isOpen
+                          ? AppTheme.robinhoodGreen
+                          : AppTheme.mutedText,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    marketHours.status,
+                    style: TextStyle(
+                      color: marketHours.isOpen
+                          ? AppTheme.robinhoodGreen
+                          : AppTheme.mutedText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Loading indicator
+        if (_isLoadingMarket)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (stocksToShow.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    _selectedMarket.icon,
+                    size: 48,
+                    color: AppTheme.mutedText,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No data available',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.mutedText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ...stocksToShow.asMap().entries.map((entry) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: StockCard(stock: entry.value)
+                .animate(delay: Duration(milliseconds: 50 * entry.key))
+                .fadeIn(duration: const Duration(milliseconds: 300))
+                .slideX(begin: 0.1, end: 0, duration: const Duration(milliseconds: 300)),
+          )),
       ],
     );
   }
