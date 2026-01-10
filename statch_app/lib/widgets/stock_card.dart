@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import '../models/market_data.dart';
 import '../theme/app_theme.dart';
-import 'mini_chart.dart';
+import 'charts/sparkline_widget.dart';
+import 'price_cell.dart';
 import 'stock_logo.dart';
 
-/// Stock Card Widget with logo, mini chart, and optional NEW badge
+/// Stock Card Widget with logo, sparkline, and real-time price
 class StockCard extends StatelessWidget {
   final Stock stock;
   final VoidCallback? onTap;
   final bool showNewBadge;
+  final bool enableRealTimeUpdates;
 
   const StockCard({
     super.key,
     required this.stock,
     this.onTap,
     this.showNewBadge = true,
+    this.enableRealTimeUpdates = true,
   });
 
   @override
@@ -101,61 +104,33 @@ class StockCard extends StatelessWidget {
                   ),
                 ),
                 
-                // Mini Chart
+                // Mini Sparkline Chart
                 SizedBox(
                   width: 60,
                   height: 32,
-                  child: MiniChart(
+                  child: SparklineWidget(
                     data: stock.priceHistory,
                     isPositive: stock.isPositive,
+                    lineWidth: 1.5,
+                    showGradient: false,
                   ),
                 ),
                 const SizedBox(width: 12),
                 
-                // Price and Change
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Text(
-                        '${stock.price.toStringAsFixed(2)} EGP',
-                        key: ValueKey(stock.price),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    _buildChangeIndicator(context),
-                  ],
+                // Price and Change with real-time updates
+                PriceCell(
+                  symbol: stock.symbol,
+                  price: stock.price,
+                  changePercent: stock.changePercent,
+                  isPositive: stock.isPositive,
+                  showArrow: true,
+                  enableTickAnimation: enableRealTimeUpdates,
                 ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildChangeIndicator(BuildContext context) {
-    final color = stock.isPositive ? AppTheme.robinhoodGreen : AppTheme.robinhoodRed;
-    final icon = stock.isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
-    
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: color),
-        const SizedBox(width: 2),
-        Text(
-          '${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toStringAsFixed(2)}%',
-          style: TextStyle(
-            color: color,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -233,31 +208,45 @@ class StockCardCompact extends StatelessWidget {
               ),
             ),
             
-            // Price
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${stock.price.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toStringAsFixed(2)}%',
-                  style: TextStyle(
-                    color: stock.isPositive 
-                        ? AppTheme.robinhoodGreen 
-                        : AppTheme.robinhoodRed,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            // Price with arrow
+            CompactPriceCell(
+              price: stock.price,
+              changePercent: stock.changePercent,
+              isPositive: stock.isPositive,
+              showArrow: true,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Real-time enabled stock card that auto-updates
+class RealTimeStockCard extends StatefulWidget {
+  final Stock stock;
+  final VoidCallback? onTap;
+  final bool showNewBadge;
+
+  const RealTimeStockCard({
+    super.key,
+    required this.stock,
+    this.onTap,
+    this.showNewBadge = true,
+  });
+
+  @override
+  State<RealTimeStockCard> createState() => _RealTimeStockCardState();
+}
+
+class _RealTimeStockCardState extends State<RealTimeStockCard> {
+  @override
+  Widget build(BuildContext context) {
+    return StockCard(
+      stock: widget.stock,
+      onTap: widget.onTap,
+      showNewBadge: widget.showNewBadge,
+      enableRealTimeUpdates: true,
     );
   }
 }

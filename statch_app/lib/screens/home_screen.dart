@@ -5,6 +5,7 @@ import '../models/market_data.dart';
 import '../services/market_data_service.dart';
 import '../services/preferences_service.dart';
 import '../services/gold_service.dart';
+import '../services/realtime_stock_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gold_card.dart';
 import '../widgets/price_chart.dart';
@@ -24,10 +25,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final MarketDataService _marketService = MarketDataService();
   final PreferencesService _prefsService = PreferencesService();
   final GoldService _goldService = GoldService();
+  final RealTimeStockService _realTimeService = RealTimeStockService();
   
   final ValueNotifier<double?> _selectedPrice = ValueNotifier(null);
   final ValueNotifier<int?> _selectedIndex = ValueNotifier(null);
@@ -49,6 +51,8 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -67,12 +71,20 @@ class _HomeScreenState extends State<HomeScreen>
         if (!_fadeController.isCompleted) {
           _fadeController.forward();
         }
+        // Start tracking visible stocks for real-time updates
+        _startRealTimeTracking(data);
       }
     });
 
     // Initialize gold service
     _goldService.init();
     _goldService.addListener(_onGoldServiceUpdate);
+  }
+
+  void _startRealTimeTracking(MarketData data) {
+    // Get all stock symbols to track
+    final symbols = data.stocks.map((s) => s.symbol).toList();
+    _realTimeService.startTracking(symbols);
   }
 
   void _onGoldServiceUpdate() {
@@ -83,12 +95,20 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fadeController.dispose();
     _marketService.stopStreaming();
     _goldService.removeListener(_onGoldServiceUpdate);
+    _realTimeService.stopTrackingAll();
     _selectedPrice.dispose();
     _selectedIndex.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // RealTimeStockService handles this internally via WidgetsBindingObserver
+    super.didChangeAppLifecycleState(state);
   }
 
   /// Build profile avatar - shows icon if no custom name/photo set
