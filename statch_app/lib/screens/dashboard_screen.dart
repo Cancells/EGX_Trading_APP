@@ -266,8 +266,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           pinned: false,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 16),
+          leading: const Padding(
+            padding: EdgeInsets.only(left: 16),
             child: StatchLogo(size: 32),
           ),
           title: Text(
@@ -422,7 +422,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  const Text(
                     'Today',
                     style: TextStyle(
                       color: AppTheme.mutedText,
@@ -472,7 +472,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildTimeRangeSelector() {
     final ranges = ['1D', '1W', '1M', '3M', '1Y', 'ALL'];
-    final selectedIndex = 0; // Default to 1D
+    const selectedIndex = 0; // Default to 1D
     
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
