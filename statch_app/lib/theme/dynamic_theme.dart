@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/preferences_service.dart';
 import 'app_theme.dart';
 
-/// Dynamic Theme Provider for Material You support
+/// Dynamic Theme Provider for Material You support with 3-way theme setting
 class DynamicThemeProvider extends ChangeNotifier {
+  final PreferencesService _prefs = PreferencesService();
+  
   ColorScheme? _lightDynamic;
   ColorScheme? _darkDynamic;
-  bool _useDynamicColor = true;
+  ThemeSetting _themeSetting = ThemeSetting.light;
+  bool _useDynamicColor = false;
   
+  ThemeSetting get themeSetting => _themeSetting;
   bool get useDynamicColor => _useDynamicColor;
   bool get supportsDynamicColor => _lightDynamic != null;
   
   ColorScheme? get lightDynamicScheme => _lightDynamic;
   ColorScheme? get darkDynamicScheme => _darkDynamic;
+
+  ThemeMode get themeMode => _themeSetting.themeMode;
+
+  /// Initialize from saved preferences
+  void init() {
+    _themeSetting = _prefs.themeSetting;
+    _useDynamicColor = _prefs.useDynamicColor;
+  }
 
   void setDynamicSchemes(ColorScheme? light, ColorScheme? dark) {
     _lightDynamic = light;
@@ -20,25 +33,52 @@ class DynamicThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleDynamicColor(bool value) {
-    _useDynamicColor = value;
+  /// Set theme setting (Light, Dark, System)
+  Future<void> setThemeSetting(ThemeSetting setting) async {
+    _themeSetting = setting;
+    await _prefs.setThemeSetting(setting);
     notifyListeners();
+  }
+
+  /// Toggle dynamic color (only applies when System theme is selected)
+  Future<void> setUseDynamicColor(bool value) async {
+    _useDynamicColor = value;
+    await _prefs.setUseDynamicColor(value);
+    notifyListeners();
+  }
+
+  /// Legacy toggle for compatibility
+  void toggleDynamicColor(bool value) {
+    setUseDynamicColor(value);
+  }
+
+  /// Check if dynamic color should be applied
+  /// Only applies when theme is set to System/Dynamic AND useDynamicColor is true
+  bool get shouldUseDynamicColor {
+    return _themeSetting == ThemeSetting.system && _useDynamicColor && supportsDynamicColor;
   }
 
   /// Get the appropriate light theme
   ThemeData getLightTheme() {
-    if (_useDynamicColor && _lightDynamic != null) {
+    if (shouldUseDynamicColor && _lightDynamic != null) {
       return _buildThemeFromScheme(_lightDynamic!, Brightness.light);
     }
-    return AppTheme.lightTheme;
+    return _buildBrandTheme(Brightness.light);
   }
 
   /// Get the appropriate dark theme
   ThemeData getDarkTheme() {
-    if (_useDynamicColor && _darkDynamic != null) {
+    if (shouldUseDynamicColor && _darkDynamic != null) {
       return _buildThemeFromScheme(_darkDynamic!, Brightness.dark);
     }
-    return AppTheme.darkTheme;
+    return _buildBrandTheme(Brightness.dark);
+  }
+
+  /// Build theme using our custom Emerald Green brand palette
+  ThemeData _buildBrandTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final scheme = isDark ? BrandColors.darkScheme : BrandColors.lightScheme;
+    return _buildThemeFromScheme(scheme, brightness);
   }
 
   ThemeData _buildThemeFromScheme(ColorScheme scheme, Brightness brightness) {
@@ -87,6 +127,14 @@ class DynamicThemeProvider extends ChangeNotifier {
           GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
         ),
       ),
+      // Page transitions for smooth navigation
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
     );
   }
 
@@ -111,7 +159,7 @@ class DynamicThemeProvider extends ChangeNotifier {
   }
 }
 
-/// Brand color scheme for fallback (Emerald & Charcoal)
+/// Brand color scheme for our custom Emerald Green palette
 class BrandColors {
   static const Color emeraldPrimary = Color(0xFF00C805);
   static const Color emeraldLight = Color(0xFF10B981);

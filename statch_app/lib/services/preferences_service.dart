@@ -1,4 +1,41 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Theme Mode Settings
+enum ThemeSetting {
+  light('Light', 'Clean, bright interface'),
+  dark('Dark', 'Easy on the eyes'),
+  system('System', 'Match device settings');
+
+  final String label;
+  final String description;
+
+  const ThemeSetting(this.label, this.description);
+
+  ThemeMode get themeMode {
+    switch (this) {
+      case ThemeSetting.light:
+        return ThemeMode.light;
+      case ThemeSetting.dark:
+        return ThemeMode.dark;
+      case ThemeSetting.system:
+        return ThemeMode.system;
+    }
+  }
+
+  static ThemeSetting fromString(String value) {
+    switch (value) {
+      case 'light':
+        return ThemeSetting.light;
+      case 'dark':
+        return ThemeSetting.dark;
+      case 'system':
+        return ThemeSetting.system;
+      default:
+        return ThemeSetting.light; // Default to light
+    }
+  }
+}
 
 /// Service for managing user preferences
 class PreferencesService {
@@ -14,9 +51,12 @@ class PreferencesService {
   static const String _keyUserAvatar = 'user_avatar';
   static const String _keyCustomAvatarPath = 'custom_avatar_path';
   static const String _keyDarkMode = 'dark_mode';
+  static const String _keyThemeSetting = 'theme_setting';
+  static const String _keyUseDynamicColor = 'use_dynamic_color';
   static const String _keyNotificationsEnabled = 'notifications_enabled';
   static const String _keyPriceAlerts = 'price_alerts';
   static const String _keyHasSeenWelcome = 'has_seen_welcome';
+  static const String _keyHasSeenLoading = 'has_seen_loading';
 
   /// Initialize the preferences service
   Future<void> init() async {
@@ -58,8 +98,35 @@ class PreferencesService {
     }
   }
 
-  /// Dark Mode
-  bool get isDarkMode => _prefs?.getBool(_keyDarkMode) ?? true;
+  /// Theme Setting (Light, Dark, System)
+  ThemeSetting get themeSetting {
+    final value = _prefs?.getString(_keyThemeSetting);
+    if (value != null) {
+      return ThemeSetting.fromString(value);
+    }
+    // Migration from old isDarkMode setting
+    final isDark = _prefs?.getBool(_keyDarkMode);
+    if (isDark != null) {
+      return isDark ? ThemeSetting.dark : ThemeSetting.light;
+    }
+    return ThemeSetting.light; // Default to light
+  }
+  
+  Future<void> setThemeSetting(ThemeSetting setting) async {
+    await _prefs?.setString(_keyThemeSetting, setting.name);
+    // Also update legacy key for compatibility
+    await _prefs?.setBool(_keyDarkMode, setting == ThemeSetting.dark);
+  }
+
+  /// Use Dynamic Color (Material You)
+  /// Only applies when theme setting is 'system'
+  bool get useDynamicColor => _prefs?.getBool(_keyUseDynamicColor) ?? false;
+  Future<void> setUseDynamicColor(bool value) async {
+    await _prefs?.setBool(_keyUseDynamicColor, value);
+  }
+
+  /// Dark Mode (legacy, kept for compatibility)
+  bool get isDarkMode => _prefs?.getBool(_keyDarkMode) ?? false;
   Future<void> setDarkMode(bool value) async {
     await _prefs?.setBool(_keyDarkMode, value);
   }
@@ -80,5 +147,11 @@ class PreferencesService {
   bool get hasSeenWelcome => _prefs?.getBool(_keyHasSeenWelcome) ?? false;
   Future<void> setHasSeenWelcome(bool value) async {
     await _prefs?.setBool(_keyHasSeenWelcome, value);
+  }
+
+  /// Has Seen Loading Screen (for first launch data fetch)
+  bool get hasSeenLoading => _prefs?.getBool(_keyHasSeenLoading) ?? false;
+  Future<void> setHasSeenLoading(bool value) async {
+    await _prefs?.setBool(_keyHasSeenLoading, value);
   }
 }

@@ -6,12 +6,7 @@ import 'settings_screen.dart';
 
 /// Main Shell with Bottom Navigation Bar
 class MainShell extends StatefulWidget {
-  final VoidCallback onThemeToggle;
-
-  const MainShell({
-    super.key,
-    required this.onThemeToggle,
-  });
+  const MainShell({super.key});
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -19,17 +14,12 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-  late final List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      HomeScreen(onThemeToggle: widget.onThemeToggle),
-      const PortfolioScreen(),
-      SettingsScreen(onThemeToggle: widget.onThemeToggle),
-    ];
-  }
+  
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    PortfolioScreen(),
+    SettingsScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
