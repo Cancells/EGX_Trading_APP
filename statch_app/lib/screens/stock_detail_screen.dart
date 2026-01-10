@@ -7,6 +7,7 @@ import '../services/gold_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/price_chart.dart';
 import '../widgets/edit_investment_sheet.dart';
+import '../widgets/stock_logo.dart';
 
 /// Stock Detail Screen with real-time graph and investment info
 class StockDetailScreen extends StatefulWidget {
@@ -183,13 +184,23 @@ class _StockDetailScreenState extends State<StockDetailScreen>
                   color: Colors.white,
                   size: 16,
                 ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: StockLogo(
+                  symbol: widget.symbol,
+                  name: widget.name,
+                  size: 40,
+                  isPositive: _priceChange >= 0,
+                ),
               ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.symbol,
+                    widget.symbol.replaceAll('.CA', ''),
                     style: TextStyle(
                       fontSize: 18, 
                       fontWeight: FontWeight.bold,
@@ -201,6 +212,8 @@ class _StockDetailScreenState extends State<StockDetailScreen>
                   Text(
                     widget.name,
                     style: const TextStyle(fontSize: 12, color: AppTheme.mutedText),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
