@@ -1,19 +1,19 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'yahoo_finance_service.dart';
-import 'currency_service.dart';
 
 /// Egyptian Gold Karat types
 enum GoldKarat {
-  k24(24, '24K', 'Pure Gold'),
-  k21(21, '21K', 'Egyptian Standard'),
-  k18(18, '18K', 'Jewelry Gold');
+  k24(24, '24K', 'Pure Gold', 1.0),
+  k21(21, '21K', 'Egyptian Standard', 0.875),
+  k18(18, '18K', 'Jewelry Gold', 0.750);
 
   final int value;
   final String label;
   final String description;
+  final double purityFactor;
 
-  const GoldKarat(this.value, this.label, this.description);
+  const GoldKarat(this.value, this.label, this.description, this.purityFactor);
 }
 
 /// Egyptian Gold Price Model
@@ -55,6 +55,41 @@ class EgyptianGoldPrice {
   }
 }
 
+/// Gold Pound (Geneh) Price Model - 8 grams of 21K gold
+class GoldPoundPrice {
+  final double price;
+  final double previousPrice;
+  final double change;
+  final double changePercent;
+  final DateTime lastUpdated;
+
+  GoldPoundPrice({
+    required this.price,
+    required this.previousPrice,
+    required this.change,
+    required this.changePercent,
+    required this.lastUpdated,
+  });
+
+  bool get isPositive => change >= 0;
+
+  GoldPoundPrice copyWith({
+    double? price,
+    double? previousPrice,
+    double? change,
+    double? changePercent,
+    DateTime? lastUpdated,
+  }) {
+    return GoldPoundPrice(
+      price: price ?? this.price,
+      previousPrice: previousPrice ?? this.previousPrice,
+      change: change ?? this.change,
+      changePercent: changePercent ?? this.changePercent,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+}
+
 /// Gold Investment for tracking purchases
 class GoldInvestment {
   final String id;
@@ -83,6 +118,22 @@ class GoldInvestment {
   bool get isProfit => profitLoss >= 0;
 }
 
+/// Constants for gold calculations
+class GoldConstants {
+  /// Troy ounce in grams
+  static const double troyOunceInGrams = 31.1035;
+  
+  /// Gold Pound (Geneh) weight in grams (21K)
+  static const double goldPoundGrams = 8.0;
+  
+  /// Default workmanship fee per gram (EGP)
+  static const double defaultWorkmanshipFee = 75.0;
+  
+  /// Workmanship fee range
+  static const double minWorkmanshipFee = 50.0;
+  static const double maxWorkmanshipFee = 150.0;
+}
+
 /// Gold Service for Egyptian gold pricing
 class GoldService extends ChangeNotifier {
   static final GoldService _instance = GoldService._internal();
@@ -90,7 +141,6 @@ class GoldService extends ChangeNotifier {
   GoldService._internal();
 
   final YahooFinanceService _yahooService = YahooFinanceService();
-  final CurrencyService _currencyService = CurrencyService();
   
   Timer? _updateTimer;
   bool _isLoading = false;
@@ -100,13 +150,60 @@ class GoldService extends ChangeNotifier {
   double _goldSpotUsd = 0;
   double _previousGoldSpotUsd = 0;
   
+  // Current USD to EGP exchange rate
+  double _usdToEgp = 49.0; // Default fallback
+  double _previousUsdToEgp = 49.0;
+  
+  // Workmanship toggle
+  bool _includeWorkmanship = false;
+  double _workmanshipFee = GoldConstants.defaultWorkmanshipFee;
+  
   // Egyptian gold prices
   final Map<GoldKarat, EgyptianGoldPrice> _prices = {};
+  GoldPoundPrice? _goldPoundPrice;
+  
+  // Ounce price in EGP
+  double _ounceEgp = 0;
+  double _previousOunceEgp = 0;
   
   bool get isLoading => _isLoading;
   String? get error => _error;
   double get goldSpotUsd => _goldSpotUsd;
+  double get usdToEgp => _usdToEgp;
+  double get ounceEgp => _ounceEgp;
   Map<GoldKarat, EgyptianGoldPrice> get prices => Map.unmodifiable(_prices);
+  GoldPoundPrice? get goldPoundPrice => _goldPoundPrice;
+  bool get includeWorkmanship => _includeWorkmanship;
+  double get workmanshipFee => _workmanshipFee;
+
+  /// Get price with optional workmanship
+  double getPriceWithWorkmanship(double rawPrice) {
+    if (_includeWorkmanship) {
+      return rawPrice + _workmanshipFee;
+    }
+    return rawPrice;
+  }
+
+  /// Toggle workmanship inclusion
+  void toggleWorkmanship() {
+    _includeWorkmanship = !_includeWorkmanship;
+    notifyListeners();
+  }
+
+  /// Set workmanship toggle
+  void setWorkmanship(bool value) {
+    _includeWorkmanship = value;
+    notifyListeners();
+  }
+
+  /// Set workmanship fee
+  void setWorkmanshipFee(double fee) {
+    _workmanshipFee = fee.clamp(
+      GoldConstants.minWorkmanshipFee,
+      GoldConstants.maxWorkmanshipFee,
+    );
+    notifyListeners();
+  }
 
   /// Initialize and start fetching prices
   Future<void> init() async {
@@ -121,33 +218,40 @@ class GoldService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Fetch gold spot price in USD (per troy ounce)
+      // Fetch gold spot price in USD (per troy ounce) - GC=F
       final goldQuote = await _yahooService.fetchQuote('GC=F');
+      
+      // Fetch USD to EGP exchange rate - EGP=X
+      final egpQuote = await _yahooService.fetchQuote('EGP=X');
       
       if (goldQuote != null) {
         _previousGoldSpotUsd = _goldSpotUsd > 0 ? _goldSpotUsd : goldQuote.previousClose;
         _goldSpotUsd = goldQuote.price;
+      }
+      
+      if (egpQuote != null) {
+        // EGP=X gives us USD to EGP rate
+        _previousUsdToEgp = _usdToEgp > 0 ? _usdToEgp : egpQuote.previousClose;
+        _usdToEgp = egpQuote.price;
+      }
+      
+      if (_goldSpotUsd > 0 && _usdToEgp > 0) {
+        // Calculate ounce price in EGP
+        // Ounce_EGP = (GC=F price) * (EGP=X rate)
+        _previousOunceEgp = _previousGoldSpotUsd * _previousUsdToEgp;
+        _ounceEgp = _goldSpotUsd * _usdToEgp;
         
-        // Convert to EGP per gram
-        // 1 troy ounce = 31.1035 grams
-        // Gold price per gram in USD = spot price / 31.1035
-        // Gold price per gram in EGP = USD price / EGP_to_USD rate
-        
-        final usdPerGram = _goldSpotUsd / 31.1035;
-        final previousUsdPerGram = _previousGoldSpotUsd / 31.1035;
-        final egpRate = _currencyService.egpToUsd;
-        
-        // Convert to EGP (divide by rate since rate is EGP->USD)
-        final egp24kPerGram = egpRate > 0 ? usdPerGram / egpRate : usdPerGram * 49;
-        final previousEgp24kPerGram = egpRate > 0 ? previousUsdPerGram / egpRate : previousUsdPerGram * 49;
+        // Calculate 24K gram price in EGP
+        // 24K Gram = Ounce_EGP / 31.1035
+        final egp24kPerGram = _ounceEgp / GoldConstants.troyOunceInGrams;
+        final previousEgp24kPerGram = _previousOunceEgp / GoldConstants.troyOunceInGrams;
         
         final now = DateTime.now();
         
         // Calculate prices for each karat
         for (final karat in GoldKarat.values) {
-          final factor = karat.value / 24;
-          final pricePerGram = egp24kPerGram * factor;
-          final previousPrice = previousEgp24kPerGram * factor;
+          final pricePerGram = egp24kPerGram * karat.purityFactor;
+          final previousPrice = previousEgp24kPerGram * karat.purityFactor;
           final change = pricePerGram - previousPrice;
           final changePercent = previousPrice > 0 ? (change / previousPrice) * 100 : 0.0;
           
@@ -160,8 +264,28 @@ class GoldService extends ChangeNotifier {
             lastUpdated: now,
           );
         }
+        
+        // Calculate Gold Pound (Geneh) price
+        // Gold Pound = 21K_Gram * 8
+        final gold21k = _prices[GoldKarat.k21];
+        if (gold21k != null) {
+          final poundPrice = gold21k.pricePerGram * GoldConstants.goldPoundGrams;
+          final previousPoundPrice = gold21k.previousPrice * GoldConstants.goldPoundGrams;
+          final poundChange = poundPrice - previousPoundPrice;
+          final poundChangePercent = previousPoundPrice > 0 
+              ? (poundChange / previousPoundPrice) * 100 
+              : 0.0;
+          
+          _goldPoundPrice = GoldPoundPrice(
+            price: poundPrice,
+            previousPrice: previousPoundPrice,
+            change: poundChange,
+            changePercent: poundChangePercent,
+            lastUpdated: now,
+          );
+        }
       } else {
-        _error = 'Failed to fetch gold prices';
+        _error = 'Failed to fetch gold prices or exchange rate';
       }
     } catch (e) {
       _error = 'Error fetching gold prices: $e';
@@ -182,6 +306,23 @@ class GoldService extends ChangeNotifier {
   /// Get price for a specific karat
   EgyptianGoldPrice? getPrice(GoldKarat karat) => _prices[karat];
 
+  /// Get display price for a karat (with or without workmanship)
+  double getDisplayPrice(GoldKarat karat) {
+    final price = _prices[karat];
+    if (price == null) return 0;
+    return getPriceWithWorkmanship(price.pricePerGram);
+  }
+
+  /// Get display price for gold pound (with or without workmanship)
+  double getGoldPoundDisplayPrice() {
+    if (_goldPoundPrice == null) return 0;
+    // Workmanship for gold pound is per gram * 8
+    if (_includeWorkmanship) {
+      return _goldPoundPrice!.price + (_workmanshipFee * GoldConstants.goldPoundGrams);
+    }
+    return _goldPoundPrice!.price;
+  }
+
   /// Calculate value of gold investment
   double calculateValue(GoldKarat karat, double grams) {
     final price = _prices[karat];
@@ -197,6 +338,39 @@ class GoldService extends ChangeNotifier {
   }) {
     final currentPrice = _prices[karat]?.pricePerGram ?? 0;
     return (currentPrice - purchasePricePerGram) * grams;
+  }
+
+  /// Get gold ticker symbol for a karat type
+  String getGoldSymbol(GoldKarat karat) {
+    switch (karat) {
+      case GoldKarat.k24:
+        return 'GOLD_24K';
+      case GoldKarat.k21:
+        return 'GOLD_21K';
+      case GoldKarat.k18:
+        return 'GOLD_18K';
+    }
+  }
+
+  /// Get gold price by symbol
+  double? getPriceBySymbol(String symbol) {
+    switch (symbol) {
+      case 'GOLD_24K':
+        return _prices[GoldKarat.k24]?.pricePerGram;
+      case 'GOLD_21K':
+        return _prices[GoldKarat.k21]?.pricePerGram;
+      case 'GOLD_18K':
+        return _prices[GoldKarat.k18]?.pricePerGram;
+      case 'GOLD_POUND':
+        return _goldPoundPrice?.price;
+      default:
+        return null;
+    }
+  }
+
+  /// Check if symbol is a gold symbol
+  static bool isGoldSymbol(String symbol) {
+    return symbol.startsWith('GOLD_');
   }
 
   @override

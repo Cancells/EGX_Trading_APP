@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/investment.dart';
 import '../services/investment_service.dart';
+import '../services/gold_service.dart';
 import '../theme/app_theme.dart';
 import 'add_investment_screen.dart';
 import 'stock_detail_screen.dart';
@@ -130,42 +131,63 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   ),
                 ),
 
-                // Investments List Header
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Investments',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+                // Gold Investments Section
+                if (_investments.any((inv) => GoldService.isGoldSymbol(inv.symbol)))
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.workspace_premium_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Gold Holdings',
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${_investments.where((inv) => GoldService.isGoldSymbol(inv.symbol)).length} positions',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppTheme.mutedText,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        Text(
-                          '${_investments.length} positions',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.mutedText,
-                          ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                // Investments List
-                if (_investments.isEmpty)
-                  SliverFillRemaining(
-                    child: _buildEmptyState(context),
-                  )
-                else
+                // Gold Investments List
+                if (_investments.any((inv) => GoldService.isGoldSymbol(inv.symbol)))
                   SliverPadding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final investment = _investments[index];
+                          final goldInvestments = _investments
+                              .where((inv) => GoldService.isGoldSymbol(inv.symbol))
+                              .toList();
+                          final investment = goldInvestments[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: _buildInvestmentCard(
@@ -176,7 +198,89 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                             ),
                           );
                         },
-                        childCount: _investments.length,
+                        childCount: _investments.where((inv) => GoldService.isGoldSymbol(inv.symbol)).length,
+                      ),
+                    ),
+                  ),
+
+                if (_investments.any((inv) => GoldService.isGoldSymbol(inv.symbol)))
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 24),
+                  ),
+
+                // Stock Investments List Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Stock Investments',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${_investments.where((inv) => !GoldService.isGoldSymbol(inv.symbol)).length} positions',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.mutedText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Stock Investments List (non-gold)
+                if (_investments.isEmpty)
+                  SliverFillRemaining(
+                    child: _buildEmptyState(context),
+                  )
+                else if (_investments.where((inv) => !GoldService.isGoldSymbol(inv.symbol)).isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: isDark 
+                              ? Colors.white.withValues(alpha: 0.05) 
+                              : Colors.black.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'No stock investments yet',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.mutedText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.all(20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final stockInvestments = _investments
+                              .where((inv) => !GoldService.isGoldSymbol(inv.symbol))
+                              .toList();
+                          final investment = stockInvestments[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildInvestmentCard(
+                              context, 
+                              investment, 
+                              currencyFormat, 
+                              isDark,
+                            ),
+                          );
+                        },
+                        childCount: _investments.where((inv) => !GoldService.isGoldSymbol(inv.symbol)).length,
                       ),
                     ),
                   ),
@@ -350,6 +454,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     bool isDark,
   ) {
     final dateFormat = DateFormat('MMM dd, yyyy');
+    final isGold = GoldService.isGoldSymbol(investment.symbol);
 
     return Dismissible(
       key: Key(investment.id),
@@ -372,10 +477,21 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+          gradient: isGold
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [const Color(0xFF2D2408), const Color(0xFF1A1505)]
+                      : [const Color(0xFFFFF8E1), const Color(0xFFFFECB3)],
+                )
+              : null,
+          color: isGold ? null : (isDark ? AppTheme.darkCard : AppTheme.lightCard),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: isGold 
+                ? AppTheme.goldPrimary.withValues(alpha: isDark ? 0.3 : 0.5)
+                : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
           ),
         ),
         child: Column(
@@ -387,22 +503,35 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: investment.isProfit
-                        ? AppTheme.robinhoodGreen.withValues(alpha: 0.1)
-                        : AppTheme.robinhoodRed.withValues(alpha: 0.1),
+                    gradient: isGold
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                          )
+                        : null,
+                    color: isGold
+                        ? null
+                        : (investment.isProfit
+                            ? AppTheme.robinhoodGreen.withValues(alpha: 0.1)
+                            : AppTheme.robinhoodRed.withValues(alpha: 0.1)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child: Text(
-                      investment.symbol.substring(0, 2),
-                      style: TextStyle(
-                        color: investment.isProfit
-                            ? AppTheme.robinhoodGreen
-                            : AppTheme.robinhoodRed,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    child: isGold
+                        ? const Icon(
+                            Icons.workspace_premium_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          )
+                        : Text(
+                            investment.symbol.substring(0, 2),
+                            style: TextStyle(
+                              color: investment.isProfit
+                                  ? AppTheme.robinhoodGreen
+                                  : AppTheme.robinhoodRed,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -412,11 +541,36 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        investment.symbol,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            investment.symbol,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isGold 
+                                  ? (isDark ? AppTheme.goldPrimary : const Color(0xFF8B6914))
+                                  : null,
+                            ),
+                          ),
+                          if (isGold) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'GOLD',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       Text(
                         investment.name,
@@ -458,18 +612,25 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            const Divider(height: 1),
+            Divider(
+              height: 1,
+              color: isGold 
+                  ? AppTheme.goldPrimary.withValues(alpha: 0.2)
+                  : null,
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
                 _buildInvestmentDetail(
                   context,
-                  'Quantity',
-                  investment.quantity.toStringAsFixed(2),
+                  isGold ? 'Weight' : 'Quantity',
+                  isGold 
+                      ? '${investment.quantity.toStringAsFixed(2)}g'
+                      : investment.quantity.toStringAsFixed(2),
                 ),
                 _buildInvestmentDetail(
                   context,
-                  'Avg Cost',
+                  isGold ? 'Buy Price' : 'Avg Cost',
                   '${format.format(investment.purchasePrice)} EGP',
                 ),
                 _buildInvestmentDetail(
