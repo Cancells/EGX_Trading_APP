@@ -3,6 +3,21 @@ import 'package:flutter/material.dart';
 import '../services/realtime_stock_service.dart';
 import '../theme/app_theme.dart';
 
+/// Utility for formatting prices with currency
+class PriceFormatter {
+  static String format(double price, {
+    String currencySymbol = 'EGP',
+    int decimals = 2,
+  }) {
+    final priceStr = price.toStringAsFixed(decimals);
+    if (currencySymbol == 'EGP') {
+      return '$priceStr EGP';
+    } else {
+      return '$currencySymbol$priceStr';
+    }
+  }
+}
+
 /// Animated price cell with tick animation and arrow indicator
 class PriceCell extends StatefulWidget {
   final String symbol;
@@ -14,6 +29,8 @@ class PriceCell extends StatefulWidget {
   final bool showArrow;
   final bool enableTickAnimation;
   final CrossAxisAlignment alignment;
+  final String currencySymbol;
+  final int decimals;
 
   const PriceCell({
     super.key,
@@ -26,6 +43,8 @@ class PriceCell extends StatefulWidget {
     this.showArrow = true,
     this.enableTickAnimation = true,
     this.alignment = CrossAxisAlignment.end,
+    this.currencySymbol = 'EGP',
+    this.decimals = 2,
   });
 
   @override
@@ -132,6 +151,12 @@ class _PriceCellState extends State<PriceCell> with SingleTickerProviderStateMix
     super.dispose();
   }
 
+  String get _formattedPrice => PriceFormatter.format(
+    _currentPrice,
+    currencySymbol: widget.currencySymbol,
+    decimals: widget.decimals,
+  );
+
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
@@ -149,7 +174,7 @@ class _PriceCellState extends State<PriceCell> with SingleTickerProviderStateMix
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: Text(
-              '${_currentPrice.toStringAsFixed(2)} EGP',
+              _formattedPrice,
               key: ValueKey(_currentPrice),
               style: widget.priceStyle ?? Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
@@ -298,6 +323,8 @@ class CompactPriceCell extends StatelessWidget {
   final double changePercent;
   final bool isPositive;
   final bool showArrow;
+  final String currencySymbol;
+  final int decimals;
 
   const CompactPriceCell({
     super.key,
@@ -305,7 +332,15 @@ class CompactPriceCell extends StatelessWidget {
     required this.changePercent,
     required this.isPositive,
     this.showArrow = true,
+    this.currencySymbol = 'EGP',
+    this.decimals = 2,
   });
+
+  String get _formattedPrice => PriceFormatter.format(
+    price,
+    currencySymbol: currencySymbol,
+    decimals: decimals,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -316,7 +351,7 @@ class CompactPriceCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          '${price.toStringAsFixed(2)} EGP',
+          _formattedPrice,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),

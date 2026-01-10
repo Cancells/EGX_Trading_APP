@@ -8,18 +8,23 @@ import '../theme/app_theme.dart';
 import '../widgets/price_chart.dart';
 import '../widgets/edit_investment_sheet.dart';
 import '../widgets/stock_logo.dart';
+import '../widgets/price_cell.dart';
 
 /// Stock Detail Screen with real-time graph and investment info
 class StockDetailScreen extends StatefulWidget {
   final String symbol;
   final String name;
   final Investment? investment;
+  final String currencySymbol;
+  final int decimals;
 
   const StockDetailScreen({
     super.key,
     required this.symbol,
     required this.name,
     this.investment,
+    this.currencySymbol = 'EGP',
+    this.decimals = 2,
   });
 
   @override
@@ -301,7 +306,11 @@ class _StockDetailScreenState extends State<StockDetailScreen>
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Text(
-                '${formatter.format(displayPrice)} EGP',
+                PriceFormatter.format(
+                  displayPrice,
+                  currencySymbol: widget.currencySymbol,
+                  decimals: widget.decimals,
+                ),
                 key: ValueKey(displayPrice),
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.bold,
