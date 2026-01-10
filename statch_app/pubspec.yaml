@@ -1,7 +1,7 @@
 name: statch_app
 description: "Statch - Egyptian Market Trading App with Robinhood-style design"
 publish_to: 'none'
-version: 1.0.0+1
+version: 2.0.0+1
 
 environment:
   sdk: ^3.5.3
@@ -22,11 +22,32 @@ dependencies:
   path_provider: ^2.1.2
   crypto: ^3.0.3
   cached_network_image: ^3.3.1
+  flutter_cache_manager: ^3.3.1
+  flutter_animate: ^4.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_native_splash: ^2.3.10
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/splash_logo.png
+  color_dark: "#000000"
+  image_dark: assets/images/splash_logo_dark.png
+  android_12:
+    color: "#FFFFFF"
+    icon_background_color: "#FFFFFF"
+    image: assets/images/splash_logo.png
+    color_dark: "#000000"
+    icon_background_color_dark: "#000000"
+    image_dark: assets/images/splash_logo_dark.png
+  ios: true
+  android: true
+  web: false
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/

@@ -8,16 +8,11 @@ import '../theme/app_theme.dart';
 import '../theme/dynamic_theme.dart';
 import 'security_gate_screen.dart';
 import 'profile_screen.dart';
-import 'about_screen.dart';
+import 'legal_screen.dart';
 
 /// Settings Screen with theme, security, and currency options
 class SettingsScreen extends StatefulWidget {
-  final VoidCallback onThemeToggle;
-
-  const SettingsScreen({
-    super.key,
-    required this.onThemeToggle,
-  });
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -28,7 +23,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final PinService _pinService = PinService();
   final LocalAuthentication _localAuth = LocalAuthentication();
   
-  late bool _isDarkMode;
   late bool _notificationsEnabled;
   late bool _priceAlertsEnabled;
   late bool _securityEnabled;
@@ -38,7 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _isDarkMode = _prefsService.isDarkMode;
     _notificationsEnabled = _prefsService.notificationsEnabled;
     _priceAlertsEnabled = _prefsService.priceAlertsEnabled;
     _securityEnabled = _pinService.isSecurityEnabled;
@@ -53,12 +46,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (_) {
       _canCheckBiometrics = false;
     }
-  }
-
-  Future<void> _toggleDarkMode(bool value) async {
-    setState(() => _isDarkMode = value);
-    await _prefsService.setDarkMode(value);
-    widget.onThemeToggle();
   }
 
   Future<void> _toggleNotifications(bool value) async {
@@ -105,6 +92,135 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     await _pinService.setBiometricEnabled(value);
     setState(() => _biometricEnabled = value);
+  }
+
+  void _showThemePicker() {
+    final themeProvider = context.read<DynamicThemeProvider>();
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Appearance',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Choose your preferred theme',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.mutedText,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...ThemeSetting.values.map((setting) {
+                final isSelected = setting == themeProvider.themeSetting;
+                return ListTile(
+                  onTap: () {
+                    themeProvider.setThemeSetting(setting);
+                    Navigator.pop(context);
+                  },
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.robinhoodGreen.withValues(alpha: 0.1)
+                          : (isDark ? AppTheme.darkCard : Colors.grey.shade100),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        _getThemeIcon(setting),
+                        color: isSelected ? AppTheme.robinhoodGreen : null,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    setting.label,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? AppTheme.robinhoodGreen : null,
+                    ),
+                  ),
+                  subtitle: Text(setting.description),
+                  trailing: isSelected
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppTheme.robinhoodGreen,
+                        )
+                      : null,
+                );
+              }),
+              // Dynamic color option (only when System theme is selected)
+              if (themeProvider.supportsDynamicColor) ...[
+                const Divider(),
+                SwitchListTile(
+                  value: themeProvider.useDynamicColor,
+                  onChanged: themeProvider.themeSetting == ThemeSetting.system
+                      ? (value) {
+                          themeProvider.setUseDynamicColor(value);
+                        }
+                      : null,
+                  title: const Text('Dynamic Colors'),
+                  subtitle: Text(
+                    themeProvider.themeSetting == ThemeSetting.system
+                        ? 'Use wallpaper colors (Material You)'
+                        : 'Only available with System theme',
+                    style: TextStyle(
+                      color: themeProvider.themeSetting == ThemeSetting.system
+                          ? AppTheme.mutedText
+                          : AppTheme.mutedText.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  activeTrackColor: AppTheme.robinhoodGreen,
+                  secondary: Icon(
+                    Icons.palette_outlined,
+                    color: themeProvider.themeSetting == ThemeSetting.system
+                        ? null
+                        : AppTheme.mutedText.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  IconData _getThemeIcon(ThemeSetting setting) {
+    switch (setting) {
+      case ThemeSetting.light:
+        return Icons.light_mode_rounded;
+      case ThemeSetting.dark:
+        return Icons.dark_mode_rounded;
+      case ThemeSetting.system:
+        return Icons.brightness_auto_rounded;
+    }
   }
 
   void _showCurrencyPicker() {
@@ -265,29 +381,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionHeader(context, 'Appearance'),
           _buildSettingTile(
             context,
-            icon: Icons.dark_mode_rounded,
-            title: 'Dark Mode',
-            subtitle: 'Use dark theme',
-            trailing: Switch(
-              value: _isDarkMode,
-              onChanged: _toggleDarkMode,
-              activeTrackColor: AppTheme.robinhoodGreen,
-            ),
+            icon: _getThemeIcon(themeProvider.themeSetting),
+            title: 'Theme',
+            subtitle: '${themeProvider.themeSetting.label}${themeProvider.shouldUseDynamicColor ? ' • Dynamic' : ''}',
+            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+            onTap: _showThemePicker,
             isDark: isDark,
           ),
-          if (themeProvider.supportsDynamicColor)
-            _buildSettingTile(
-              context,
-              icon: Icons.palette_outlined,
-              title: 'Dynamic Colors',
-              subtitle: 'Use Material You wallpaper colors',
-              trailing: Switch(
-                value: themeProvider.useDynamicColor,
-                onChanged: (value) => themeProvider.toggleDynamicColor(value),
-                activeTrackColor: AppTheme.robinhoodGreen,
-              ),
-              isDark: isDark,
-            ),
           
           const SizedBox(height: 24),
           
@@ -403,17 +503,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right_rounded, size: 20),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const AboutScreen()),
+              MaterialPageRoute(builder: (_) => const LegalScreen()),
             ),
             isDark: isDark,
           ),
           _buildSettingTile(
             context,
-            icon: Icons.delete_outline_rounded,
-            title: 'Clear Cache',
-            subtitle: 'Free up storage space',
+            icon: Icons.description_outlined,
+            title: 'Legal',
+            subtitle: 'Terms, Privacy & Service Usage',
             trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-            onTap: () => _showClearCacheDialog(context),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LegalScreen()),
+            ),
             isDark: isDark,
           ),
           
@@ -497,52 +600,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showClearCacheDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Clear Cache'),
-        content: const Text(
-          'This will clear all cached data. Your personal settings will not be affected.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Row(
-                    children: [
-                      Icon(Icons.check_circle_rounded, color: Colors.white),
-                      SizedBox(width: 12),
-                      Text('Cache cleared successfully'),
-                    ],
-                  ),
-                  backgroundColor: AppTheme.robinhoodGreen,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.robinhoodGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Clear'),
-          ),
-        ],
       ),
     );
   }
