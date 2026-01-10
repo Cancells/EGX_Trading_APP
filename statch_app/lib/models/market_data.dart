@@ -122,6 +122,9 @@ class Stock {
   final String? sector;
   final String? website;
   final DateTime? listedDate;
+  final String currencySymbol;
+  final int decimals;
+  final String? marketType; // 'egx', 'us', 'crypto'
 
   Stock({
     required this.symbol,
@@ -134,6 +137,9 @@ class Stock {
     this.sector,
     this.website,
     this.listedDate,
+    this.currencySymbol = 'EGP',
+    this.decimals = 2,
+    this.marketType,
   });
 
   bool get isPositive => change >= 0;
@@ -144,6 +150,16 @@ class Stock {
     final now = DateTime.now();
     final difference = now.difference(listedDate!);
     return difference.inDays <= 30;
+  }
+
+  /// Format price with appropriate currency symbol and decimals
+  String get formattedPrice {
+    final priceStr = price.toStringAsFixed(decimals);
+    if (currencySymbol == 'EGP') {
+      return '$priceStr EGP';
+    } else {
+      return '$currencySymbol$priceStr';
+    }
   }
 
   Stock copyWith({
@@ -157,6 +173,9 @@ class Stock {
     String? sector,
     String? website,
     DateTime? listedDate,
+    String? currencySymbol,
+    int? decimals,
+    String? marketType,
   }) {
     return Stock(
       symbol: symbol ?? this.symbol,
@@ -169,6 +188,9 @@ class Stock {
       sector: sector ?? this.sector,
       website: website ?? this.website,
       listedDate: listedDate ?? this.listedDate,
+      currencySymbol: currencySymbol ?? this.currencySymbol,
+      decimals: decimals ?? this.decimals,
+      marketType: marketType ?? this.marketType,
     );
   }
 }
