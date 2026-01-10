@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/investment.dart';
 import '../services/yahoo_finance_service.dart';
+import '../services/gold_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/price_chart.dart';
 import '../widgets/edit_investment_sheet.dart';
@@ -27,6 +28,7 @@ class StockDetailScreen extends StatefulWidget {
 class _StockDetailScreenState extends State<StockDetailScreen>
     with SingleTickerProviderStateMixin {
   final YahooFinanceService _yahooService = YahooFinanceService();
+  final GoldService _goldService = GoldService();
   
   late TabController _tabController;
   Timer? _updateTimer;
@@ -40,12 +42,24 @@ class _StockDetailScreenState extends State<StockDetailScreen>
   final ValueNotifier<double?> _selectedPrice = ValueNotifier(null);
   final ValueNotifier<int?> _selectedIndex = ValueNotifier(null);
 
+  bool get _isGold => GoldService.isGoldSymbol(widget.symbol);
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _fetchData();
     _startPolling();
+    
+    if (_isGold) {
+      _goldService.addListener(_onGoldUpdate);
+    }
+  }
+
+  void _onGoldUpdate() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -54,6 +68,9 @@ class _StockDetailScreenState extends State<StockDetailScreen>
     _updateTimer?.cancel();
     _selectedPrice.dispose();
     _selectedIndex.dispose();
+    if (_isGold) {
+      _goldService.removeListener(_onGoldUpdate);
+    }
     super.dispose();
   }
 
@@ -64,6 +81,17 @@ class _StockDetailScreenState extends State<StockDetailScreen>
   }
 
   Future<void> _fetchData() async {
+    if (_isGold) {
+      // For gold, use GoldService
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = null;
+        });
+      }
+      return;
+    }
+
     try {
       final futures = await Future.wait([
         _yahooService.fetchIntradayData(widget.symbol),
@@ -88,6 +116,30 @@ class _StockDetailScreenState extends State<StockDetailScreen>
     }
   }
 
+  double get _currentPrice {
+    if (_isGold) {
+      return _goldService.getPriceBySymbol(widget.symbol) ?? 0;
+    }
+    return _quoteData?.price ?? 0;
+  }
+
+  double get _previousPrice {
+    if (_isGold) {
+      final price = _goldService.prices.values.firstOrNull;
+      return price?.previousPrice ?? _currentPrice;
+    }
+    return _quoteData?.previousClose ?? _currentPrice;
+  }
+
+  double get _priceChange {
+    return _currentPrice - _previousPrice;
+  }
+
+  double get _priceChangePercent {
+    if (_previousPrice == 0) return 0;
+    return (_priceChange / _previousPrice) * 100;
+  }
+
   void _openEditSheet() {
     if (widget.investment == null) return;
     
@@ -110,19 +162,48 @@ class _StockDetailScreenState extends State<StockDetailScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final formatter = NumberFormat.currency(symbol: '', decimalDigits: 2);
+    final accentColor = _isGold ? AppTheme.goldPrimary : AppTheme.robinhoodGreen;
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(
-              widget.symbol,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              widget.name,
-              style: const TextStyle(fontSize: 12, color: AppTheme.mutedText),
+            if (_isGold)
+              Container(
+                padding: const EdgeInsets.all(6),
+                margin: const EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.workspace_premium_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.symbol,
+                    style: TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold,
+                      color: _isGold 
+                          ? (isDark ? AppTheme.goldPrimary : const Color(0xFF8B6914))
+                          : null,
+                    ),
+                  ),
+                  Text(
+                    widget.name,
+                    style: const TextStyle(fontSize: 12, color: AppTheme.mutedText),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -181,9 +262,9 @@ class _StockDetailScreenState extends State<StockDetailScreen>
   }
 
   Widget _buildPriceHeader(NumberFormat formatter) {
-    final price = _quoteData?.price ?? 0;
-    final change = _quoteData?.change ?? 0;
-    final changePercent = _quoteData?.changePercent ?? 0;
+    final price = _currentPrice;
+    final change = _priceChange;
+    final changePercent = _priceChangePercent;
     final isPositive = change >= 0;
 
     return ValueListenableBuilder<double?>(
@@ -194,6 +275,16 @@ class _StockDetailScreenState extends State<StockDetailScreen>
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_isGold)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Per ${widget.symbol == 'GOLD_POUND' ? 'piece' : 'gram'}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.goldPrimary,
+                  ),
+                ),
+              ),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: Text(
@@ -321,7 +412,7 @@ class _StockDetailScreenState extends State<StockDetailScreen>
     bool isDark,
   ) {
     final inv = widget.investment!;
-    final currentPrice = _quoteData?.price ?? inv.currentPrice;
+    final currentPrice = _currentPrice > 0 ? _currentPrice : inv.currentPrice;
     final currentValue = currentPrice * inv.quantity;
     final profitLoss = (currentPrice - inv.purchasePrice) * inv.quantity;
     final profitLossPercent = inv.purchasePrice > 0
@@ -336,20 +427,27 @@ class _StockDetailScreenState extends State<StockDetailScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            isProfit
-                ? AppTheme.robinhoodGreen.withValues(alpha: 0.15)
-                : AppTheme.robinhoodRed.withValues(alpha: 0.15),
-            isProfit
-                ? AppTheme.robinhoodGreen.withValues(alpha: 0.05)
-                : AppTheme.robinhoodRed.withValues(alpha: 0.05),
-          ],
+          colors: _isGold
+              ? [
+                  isDark ? const Color(0xFF2D2408) : const Color(0xFFFFF8E1),
+                  isDark ? const Color(0xFF1A1505) : const Color(0xFFFFECB3),
+                ]
+              : [
+                  isProfit
+                      ? AppTheme.robinhoodGreen.withValues(alpha: 0.15)
+                      : AppTheme.robinhoodRed.withValues(alpha: 0.15),
+                  isProfit
+                      ? AppTheme.robinhoodGreen.withValues(alpha: 0.05)
+                      : AppTheme.robinhoodRed.withValues(alpha: 0.05),
+                ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isProfit
-              ? AppTheme.robinhoodGreen.withValues(alpha: 0.2)
-              : AppTheme.robinhoodRed.withValues(alpha: 0.2),
+          color: _isGold
+              ? AppTheme.goldPrimary.withValues(alpha: isDark ? 0.3 : 0.5)
+              : (isProfit
+                  ? AppTheme.robinhoodGreen.withValues(alpha: 0.2)
+                  : AppTheme.robinhoodRed.withValues(alpha: 0.2)),
         ),
       ),
       child: Column(
@@ -358,11 +456,34 @@ class _StockDetailScreenState extends State<StockDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Your Position',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  if (_isGold)
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.workspace_premium_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                  Text(
+                    _isGold ? 'Your Gold Holdings' : 'Your Position',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: _isGold 
+                          ? (isDark ? AppTheme.goldPrimary : const Color(0xFF8B6914))
+                          : null,
+                    ),
+                  ),
+                ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -390,12 +511,14 @@ class _StockDetailScreenState extends State<StockDetailScreen>
             children: [
               _buildPositionStat(
                 context,
-                'Shares',
-                inv.quantity.toStringAsFixed(2),
+                _isGold ? 'Weight' : 'Shares',
+                _isGold 
+                    ? '${inv.quantity.toStringAsFixed(2)}g'
+                    : inv.quantity.toStringAsFixed(2),
               ),
               _buildPositionStat(
                 context,
-                'Avg Cost',
+                _isGold ? 'Buy Price' : 'Avg Cost',
                 '${formatter.format(inv.purchasePrice)} EGP',
               ),
             ],
@@ -457,7 +580,7 @@ class _StockDetailScreenState extends State<StockDetailScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Statistics',
+          _isGold ? 'Gold Information' : 'Statistics',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -466,23 +589,79 @@ class _StockDetailScreenState extends State<StockDetailScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+            gradient: _isGold
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF2D2408), const Color(0xFF1A1505)]
+                        : [const Color(0xFFFFF8E1), const Color(0xFFFFECB3)],
+                  )
+                : null,
+            color: _isGold ? null : (isDark ? AppTheme.darkCard : AppTheme.lightCard),
             borderRadius: BorderRadius.circular(16),
+            border: _isGold
+                ? Border.all(
+                    color: AppTheme.goldPrimary.withValues(alpha: isDark ? 0.3 : 0.5),
+                  )
+                : null,
           ),
           child: Column(
-            children: [
-              _buildStatRow('Open', _quoteData?.previousClose.toStringAsFixed(2) ?? '-'),
-              const Divider(height: 24),
-              _buildStatRow('Previous Close', _quoteData?.previousClose.toStringAsFixed(2) ?? '-'),
-              const Divider(height: 24),
-              _buildStatRow('Day Range', '${(_quoteData?.previousClose ?? 0 * 0.98).toStringAsFixed(2)} - ${(_quoteData?.price ?? 0 * 1.02).toStringAsFixed(2)}'),
-              const Divider(height: 24),
-              _buildStatRow('Currency', _quoteData?.currency ?? 'EGP'),
-            ],
+            children: _isGold
+                ? [
+                    _buildStatRow('Type', _getGoldType()),
+                    const Divider(height: 24),
+                    _buildStatRow('Purity', _getGoldPurity()),
+                    const Divider(height: 24),
+                    _buildStatRow('Gold Spot (USD)', '\$${_goldService.goldSpotUsd.toStringAsFixed(2)}/oz'),
+                    const Divider(height: 24),
+                    _buildStatRow('USD/EGP Rate', _goldService.usdToEgp.toStringAsFixed(2)),
+                    const Divider(height: 24),
+                    _buildStatRow('Currency', 'EGP'),
+                  ]
+                : [
+                    _buildStatRow('Open', _quoteData?.previousClose.toStringAsFixed(2) ?? '-'),
+                    const Divider(height: 24),
+                    _buildStatRow('Previous Close', _quoteData?.previousClose.toStringAsFixed(2) ?? '-'),
+                    const Divider(height: 24),
+                    _buildStatRow('Day Range', '${(_quoteData?.previousClose ?? 0 * 0.98).toStringAsFixed(2)} - ${(_quoteData?.price ?? 0 * 1.02).toStringAsFixed(2)}'),
+                    const Divider(height: 24),
+                    _buildStatRow('Currency', _quoteData?.currency ?? 'EGP'),
+                  ],
           ),
         ),
       ],
     );
+  }
+
+  String _getGoldType() {
+    switch (widget.symbol) {
+      case 'GOLD_24K':
+        return 'Pure Gold (24 Karat)';
+      case 'GOLD_21K':
+        return 'Egyptian Standard (21 Karat)';
+      case 'GOLD_18K':
+        return 'Jewelry Gold (18 Karat)';
+      case 'GOLD_POUND':
+        return 'Egyptian Gold Pound';
+      default:
+        return 'Gold';
+    }
+  }
+
+  String _getGoldPurity() {
+    switch (widget.symbol) {
+      case 'GOLD_24K':
+        return '99.9%';
+      case 'GOLD_21K':
+        return '87.5%';
+      case 'GOLD_18K':
+        return '75.0%';
+      case 'GOLD_POUND':
+        return '87.5% (8g of 21K)';
+      default:
+        return '-';
+    }
   }
 
   Widget _buildStatRow(String label, String value) {
