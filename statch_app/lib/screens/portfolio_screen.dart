@@ -6,6 +6,7 @@ import '../models/investment.dart';
 import '../services/investment_service.dart';
 import '../services/gold_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/stock_logo.dart';
 import 'add_investment_screen.dart';
 import 'stock_detail_screen.dart';
 
@@ -505,42 +506,32 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           children: [
             Row(
               children: [
-                // Symbol Badge
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: isGold
-                        ? const LinearGradient(
-                            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                          )
-                        : null,
-                    color: isGold
-                        ? null
-                        : (investment.isProfit
-                            ? AppTheme.robinhoodGreen.withValues(alpha: 0.1)
-                            : AppTheme.robinhoodRed.withValues(alpha: 0.1)),
-                    borderRadius: BorderRadius.circular(12),
+                // Symbol Badge / Logo
+                if (isGold)
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.workspace_premium_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  )
+                else
+                  StockLogo(
+                    symbol: investment.symbol,
+                    name: investment.name,
+                    size: 48,
+                    isPositive: investment.isProfit,
                   ),
-                  child: Center(
-                    child: isGold
-                        ? const Icon(
-                            Icons.workspace_premium_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          )
-                        : Text(
-                            investment.symbol.substring(0, 2),
-                            style: TextStyle(
-                              color: investment.isProfit
-                                  ? AppTheme.robinhoodGreen
-                                  : AppTheme.robinhoodRed,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                  ),
-                ),
                 const SizedBox(width: 12),
                 
                 // Info
@@ -550,13 +541,16 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            investment.symbol,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isGold 
-                                  ? (isDark ? AppTheme.goldPrimary : const Color(0xFF8B6914))
-                                  : null,
+                          Flexible(
+                            child: Text(
+                              investment.symbol.replaceAll('.CA', ''),
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isGold 
+                                    ? (isDark ? AppTheme.goldPrimary : const Color(0xFF8B6914))
+                                    : null,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (isGold) ...[

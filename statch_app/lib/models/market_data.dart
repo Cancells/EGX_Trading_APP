@@ -120,6 +120,8 @@ class Stock {
   final List<double> priceHistory;
   final DateTime lastUpdated;
   final String? sector;
+  final String? website;
+  final DateTime? listedDate;
 
   Stock({
     required this.symbol,
@@ -130,9 +132,19 @@ class Stock {
     required this.priceHistory,
     required this.lastUpdated,
     this.sector,
+    this.website,
+    this.listedDate,
   });
 
   bool get isPositive => change >= 0;
+  
+  /// Check if the stock was listed within the last 30 days
+  bool get isNew {
+    if (listedDate == null) return false;
+    final now = DateTime.now();
+    final difference = now.difference(listedDate!);
+    return difference.inDays <= 30;
+  }
 
   Stock copyWith({
     String? symbol,
@@ -143,6 +155,8 @@ class Stock {
     List<double>? priceHistory,
     DateTime? lastUpdated,
     String? sector,
+    String? website,
+    DateTime? listedDate,
   }) {
     return Stock(
       symbol: symbol ?? this.symbol,
@@ -153,6 +167,8 @@ class Stock {
       priceHistory: priceHistory ?? this.priceHistory,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       sector: sector ?? this.sector,
+      website: website ?? this.website,
+      listedDate: listedDate ?? this.listedDate,
     );
   }
 }
@@ -182,101 +198,113 @@ class EgyptianStock {
   final String symbol;
   final String name;
   final String sector;
+  final String? website;
+  final DateTime? listedDate;
 
   const EgyptianStock({
     required this.symbol,
     required this.name,
     required this.sector,
+    this.website,
+    this.listedDate,
   });
+
+  /// Check if the stock was listed within the last 30 days
+  bool get isNew {
+    if (listedDate == null) return false;
+    final now = DateTime.now();
+    final difference = now.difference(listedDate!);
+    return difference.inDays <= 30;
+  }
 }
 
-/// List of all Egyptian stocks
+/// List of all Egyptian stocks with website and listing date info
 class EgyptianStocks {
-  static const List<EgyptianStock> preciousMetals = [
-    EgyptianStock(symbol: 'GOLD_24K', name: 'Gold 24K (Gram)', sector: 'Precious Metals'),
-    EgyptianStock(symbol: 'GOLD_21K', name: 'Gold 21K (Gram)', sector: 'Precious Metals'),
-    EgyptianStock(symbol: 'GOLD_18K', name: 'Gold 18K (Gram)', sector: 'Precious Metals'),
-    EgyptianStock(symbol: 'GOLD_POUND', name: 'Egyptian Gold Pound (8g)', sector: 'Precious Metals'),
+  static List<EgyptianStock> get preciousMetals => [
+    const EgyptianStock(symbol: 'GOLD_24K', name: 'Gold 24K (Gram)', sector: 'Precious Metals'),
+    const EgyptianStock(symbol: 'GOLD_21K', name: 'Gold 21K (Gram)', sector: 'Precious Metals'),
+    const EgyptianStock(symbol: 'GOLD_18K', name: 'Gold 18K (Gram)', sector: 'Precious Metals'),
+    const EgyptianStock(symbol: 'GOLD_POUND', name: 'Egyptian Gold Pound (8g)', sector: 'Precious Metals'),
   ];
 
-  static const List<EgyptianStock> banks = [
-    EgyptianStock(symbol: 'COMI.CA', name: 'Commercial International Bank (CIB)', sector: 'Banks'),
-    EgyptianStock(symbol: 'CIEB.CA', name: 'Credit Agricole Egypt', sector: 'Banks'),
-    EgyptianStock(symbol: 'ADIB.CA', name: 'Abu Dhabi Islamic Bank', sector: 'Banks'),
-    EgyptianStock(symbol: 'HDBK.CA', name: 'Housing & Development Bank', sector: 'Banks'),
+  static List<EgyptianStock> get banks => [
+    EgyptianStock(symbol: 'COMI.CA', name: 'Commercial International Bank (CIB)', sector: 'Banks', website: 'cibeg.com'),
+    EgyptianStock(symbol: 'CIEB.CA', name: 'Credit Agricole Egypt', sector: 'Banks', website: 'credit-agricole.com.eg'),
+    EgyptianStock(symbol: 'ADIB.CA', name: 'Abu Dhabi Islamic Bank', sector: 'Banks', website: 'adib.eg'),
+    EgyptianStock(symbol: 'HDBK.CA', name: 'Housing & Development Bank', sector: 'Banks', website: 'hdb-egy.com'),
   ];
 
-  static const List<EgyptianStock> realEstate = [
-    EgyptianStock(symbol: 'TMGH.CA', name: 'Talaat Moustafa Group', sector: 'Real Estate'),
-    EgyptianStock(symbol: 'PHDC.CA', name: 'Palm Hills Developments', sector: 'Real Estate'),
-    EgyptianStock(symbol: 'HELI.CA', name: 'Heliopolis Housing', sector: 'Real Estate'),
-    EgyptianStock(symbol: 'ORHD.CA', name: 'Orascom Development', sector: 'Real Estate'),
-    EgyptianStock(symbol: 'EMFD.CA', name: 'Emaar Misr', sector: 'Real Estate'),
-    EgyptianStock(symbol: 'PORT.CA', name: 'Porto Group', sector: 'Real Estate'),
+  static List<EgyptianStock> get realEstate => [
+    EgyptianStock(symbol: 'TMGH.CA', name: 'Talaat Moustafa Group', sector: 'Real Estate', website: 'talaatmoustafa.com'),
+    EgyptianStock(symbol: 'PHDC.CA', name: 'Palm Hills Developments', sector: 'Real Estate', website: 'palmhillsdevelopments.com'),
+    EgyptianStock(symbol: 'HELI.CA', name: 'Heliopolis Housing', sector: 'Real Estate', website: 'heliopoliscompany.com'),
+    EgyptianStock(symbol: 'ORHD.CA', name: 'Orascom Development', sector: 'Real Estate', website: 'orascomdh.com'),
+    EgyptianStock(symbol: 'EMFD.CA', name: 'Emaar Misr', sector: 'Real Estate', website: 'emaarmisr.com'),
+    EgyptianStock(symbol: 'PORT.CA', name: 'Porto Group', sector: 'Real Estate', website: 'portogroup.com.eg', listedDate: DateTime(2025, 12, 20)), // NEW
     EgyptianStock(symbol: 'ACAMD.CA', name: 'Arab Co. for Asset Management', sector: 'Real Estate'),
     EgyptianStock(symbol: 'MENA.CA', name: 'Mena Touristic & Real Estate', sector: 'Real Estate'),
   ];
 
-  static const List<EgyptianStock> telecom = [
-    EgyptianStock(symbol: 'ETEL.CA', name: 'Telecom Egypt', sector: 'Telecom'),
+  static List<EgyptianStock> get telecom => [
+    EgyptianStock(symbol: 'ETEL.CA', name: 'Telecom Egypt', sector: 'Telecom', website: 'te.eg'),
   ];
 
-  static const List<EgyptianStock> fintech = [
-    EgyptianStock(symbol: 'FWRY.CA', name: 'Fawry Banking & Payment', sector: 'Fintech'),
+  static List<EgyptianStock> get fintech => [
+    EgyptianStock(symbol: 'FWRY.CA', name: 'Fawry Banking & Payment', sector: 'Fintech', website: 'fawry.com'),
   ];
 
-  static const List<EgyptianStock> financialServices = [
-    EgyptianStock(symbol: 'HRHO.CA', name: 'EFG Hermes', sector: 'Financial Services'),
-    EgyptianStock(symbol: 'BTFH.CA', name: 'Beltone Financial', sector: 'Financial Services'),
-    EgyptianStock(symbol: 'CNFN.CA', name: 'Contact Financial', sector: 'Financial Services'),
+  static List<EgyptianStock> get financialServices => [
+    EgyptianStock(symbol: 'HRHO.CA', name: 'EFG Hermes', sector: 'Financial Services', website: 'efghermes.com'),
+    EgyptianStock(symbol: 'BTFH.CA', name: 'Beltone Financial', sector: 'Financial Services', website: 'beltoneholding.com'),
+    EgyptianStock(symbol: 'CNFN.CA', name: 'Contact Financial', sector: 'Financial Services', website: 'contactcars.com', listedDate: DateTime(2025, 12, 25)), // NEW
   ];
 
-  static const List<EgyptianStock> investments = [
-    EgyptianStock(symbol: 'EKHO.CA', name: 'Egypt Kuwait Holding', sector: 'Investments'),
-    EgyptianStock(symbol: 'CCAP.CA', name: 'Qalaa Holdings', sector: 'Investments'),
+  static List<EgyptianStock> get investments => [
+    EgyptianStock(symbol: 'EKHO.CA', name: 'Egypt Kuwait Holding', sector: 'Investments', website: 'ekholding.com'),
+    EgyptianStock(symbol: 'CCAP.CA', name: 'Qalaa Holdings', sector: 'Investments', website: 'qalaaholdings.com'),
     EgyptianStock(symbol: 'BINV.CA', name: 'B Investments', sector: 'Investments'),
     EgyptianStock(symbol: 'AIH.CA', name: 'Arabia Investments Holding', sector: 'Investments'),
     EgyptianStock(symbol: 'AMIA.CA', name: 'Arab Moltaqa Investments', sector: 'Investments'),
   ];
 
-  static const List<EgyptianStock> basicResources = [
-    EgyptianStock(symbol: 'ABUK.CA', name: 'Abou Kir Fertilizers', sector: 'Basic Resources'),
-    EgyptianStock(symbol: 'MFPC.CA', name: 'Mopco Fertilizers', sector: 'Basic Resources'),
-    EgyptianStock(symbol: 'ESRS.CA', name: 'Ezz Steel', sector: 'Basic Resources'),
-    EgyptianStock(symbol: 'EGAL.CA', name: 'Egypt Aluminum', sector: 'Basic Resources'),
+  static List<EgyptianStock> get basicResources => [
+    EgyptianStock(symbol: 'ABUK.CA', name: 'Abou Kir Fertilizers', sector: 'Basic Resources', website: 'aboukir.com'),
+    EgyptianStock(symbol: 'MFPC.CA', name: 'Mopco Fertilizers', sector: 'Basic Resources', website: 'mopco-eg.com'),
+    EgyptianStock(symbol: 'ESRS.CA', name: 'Ezz Steel', sector: 'Basic Resources', website: 'ezzsteel.com'),
+    EgyptianStock(symbol: 'EGAL.CA', name: 'Egypt Aluminum', sector: 'Basic Resources', website: 'egyptalum.com.eg'),
     EgyptianStock(symbol: 'KIMA.CA', name: 'Egyptian Chemical Industries', sector: 'Basic Resources'),
     EgyptianStock(symbol: 'ATQA.CA', name: 'Misr National Steel', sector: 'Basic Resources'),
   ];
 
-  static const List<EgyptianStock> industrial = [
-    EgyptianStock(symbol: 'SWDY.CA', name: 'El Sewedy Electric', sector: 'Industrial'),
+  static List<EgyptianStock> get industrial => [
+    EgyptianStock(symbol: 'SWDY.CA', name: 'El Sewedy Electric', sector: 'Industrial', website: 'elsewedy.com'),
   ];
 
-  static const List<EgyptianStock> healthcare = [
-    EgyptianStock(symbol: 'ISPH.CA', name: 'Ibnsina Pharma', sector: 'Healthcare'),
-    EgyptianStock(symbol: 'CLHO.CA', name: 'Cleopatra Hospitals', sector: 'Healthcare'),
-    EgyptianStock(symbol: 'RMDA.CA', name: 'Rameda Pharmaceuticals', sector: 'Healthcare'),
-    EgyptianStock(symbol: 'SPMD.CA', name: 'Speed Medical', sector: 'Healthcare'),
-    EgyptianStock(symbol: 'MPCI.CA', name: 'Memphis Pharmaceuticals', sector: 'Healthcare'),
+  static List<EgyptianStock> get healthcare => [
+    EgyptianStock(symbol: 'ISPH.CA', name: 'Ibnsina Pharma', sector: 'Healthcare', website: 'ibnsinapharma.com'),
+    EgyptianStock(symbol: 'CLHO.CA', name: 'Cleopatra Hospitals', sector: 'Healthcare', website: 'cleopatrahospitals.com'),
+    EgyptianStock(symbol: 'RMDA.CA', name: 'Rameda Pharmaceuticals', sector: 'Healthcare', website: 'rameda-pharma.com'),
+    EgyptianStock(symbol: 'SPMD.CA', name: 'Speed Medical', sector: 'Healthcare', website: 'speedmedical.net'),
+    EgyptianStock(symbol: 'MPCI.CA', name: 'Memphis Pharmaceuticals', sector: 'Healthcare', listedDate: DateTime(2026, 1, 5)), // NEW
   ];
 
-  static const List<EgyptianStock> technology = [
-    EgyptianStock(symbol: 'EFIH.CA', name: 'e-finance', sector: 'Technology'),
-    EgyptianStock(symbol: 'RAYA.CA', name: 'Raya Holding', sector: 'Technology'),
-    EgyptianStock(symbol: 'RACC.CA', name: 'Raya Contact Center', sector: 'Technology'),
+  static List<EgyptianStock> get technology => [
+    EgyptianStock(symbol: 'EFIH.CA', name: 'e-finance', sector: 'Technology', website: 'efinance.com.eg'),
+    EgyptianStock(symbol: 'RAYA.CA', name: 'Raya Holding', sector: 'Technology', website: 'rayacorp.com'),
+    EgyptianStock(symbol: 'RACC.CA', name: 'Raya Contact Center', sector: 'Technology', website: 'rayacc.com'),
   ];
 
-  static const List<EgyptianStock> energy = [
-    EgyptianStock(symbol: 'AMOC.CA', name: 'Alexandria Mineral Oils', sector: 'Energy'),
-    EgyptianStock(symbol: 'SKPC.CA', name: 'Sidi Kerir Petrochemicals', sector: 'Energy'),
+  static List<EgyptianStock> get energy => [
+    EgyptianStock(symbol: 'AMOC.CA', name: 'Alexandria Mineral Oils', sector: 'Energy', website: 'amoc-eg.com'),
+    EgyptianStock(symbol: 'SKPC.CA', name: 'Sidi Kerir Petrochemicals', sector: 'Energy', website: 'sidpec.com'),
   ];
 
-  static const List<EgyptianStock> foodAndBeverage = [
-    EgyptianStock(symbol: 'JUFO.CA', name: 'Juhayna Food Industries', sector: 'Food & Beverage'),
-    EgyptianStock(symbol: 'DOMT.CA', name: 'Arabian Food Ind. DOMTY', sector: 'Food & Beverage'),
-    EgyptianStock(symbol: 'EFID.CA', name: 'Edita Food Industries', sector: 'Food & Beverage'),
+  static List<EgyptianStock> get foodAndBeverage => [
+    EgyptianStock(symbol: 'JUFO.CA', name: 'Juhayna Food Industries', sector: 'Food & Beverage', website: 'juhayna.com'),
+    EgyptianStock(symbol: 'DOMT.CA', name: 'Arabian Food Ind. DOMTY', sector: 'Food & Beverage', website: 'domty.com'),
+    EgyptianStock(symbol: 'EFID.CA', name: 'Edita Food Industries', sector: 'Food & Beverage', website: 'edita.com.eg'),
     EgyptianStock(symbol: 'AJWA.CA', name: 'Ajwa Group', sector: 'Food & Beverage'),
-    EgyptianStock(symbol: 'OLFI.CA', name: 'Obour Land', sector: 'Food & Beverage'),
+    EgyptianStock(symbol: 'OLFI.CA', name: 'Obour Land', sector: 'Food & Beverage', website: 'obourland.com'),
     EgyptianStock(symbol: 'SCFM.CA', name: 'South Cairo & Giza Mills', sector: 'Food & Beverage'),
     EgyptianStock(symbol: 'ZEOT.CA', name: 'Extracted Oils', sector: 'Food & Beverage'),
     EgyptianStock(symbol: 'POUL.CA', name: 'Cairo Poultry', sector: 'Food & Beverage'),
@@ -284,35 +312,35 @@ class EgyptianStocks {
     EgyptianStock(symbol: 'EIUD.CA', name: 'Upper Egypt Flour Mills', sector: 'Food & Beverage'),
   ];
 
-  static const List<EgyptianStock> textiles = [
-    EgyptianStock(symbol: 'ORWE.CA', name: 'Oriental Weavers', sector: 'Textiles'),
+  static List<EgyptianStock> get textiles => [
+    EgyptianStock(symbol: 'ORWE.CA', name: 'Oriental Weavers', sector: 'Textiles', website: 'orientalweavers.com'),
     EgyptianStock(symbol: 'DSCW.CA', name: 'Dice Sport & Casual Wear', sector: 'Textiles'),
   ];
 
-  static const List<EgyptianStock> construction = [
-    EgyptianStock(symbol: 'ORAS.CA', name: 'Orascom Construction', sector: 'Construction'),
+  static List<EgyptianStock> get construction => [
+    EgyptianStock(symbol: 'ORAS.CA', name: 'Orascom Construction', sector: 'Construction', website: 'orascom.com'),
     EgyptianStock(symbol: 'GGCC.CA', name: 'Giza General Contracting', sector: 'Construction'),
     EgyptianStock(symbol: 'UEGC.CA', name: 'Upper Egypt Contracting', sector: 'Construction'),
   ];
 
-  static const List<EgyptianStock> buildingMaterials = [
-    EgyptianStock(symbol: 'ARCC.CA', name: 'Arabian Cement', sector: 'Building Materials'),
+  static List<EgyptianStock> get buildingMaterials => [
+    EgyptianStock(symbol: 'ARCC.CA', name: 'Arabian Cement', sector: 'Building Materials', website: 'arabcement.com'),
     EgyptianStock(symbol: 'MCQE.CA', name: 'Misr Cement Qena', sector: 'Building Materials'),
   ];
 
-  static const List<EgyptianStock> automotive = [
-    EgyptianStock(symbol: 'AUTO.CA', name: 'GB Auto', sector: 'Automotive'),
+  static List<EgyptianStock> get automotive => [
+    EgyptianStock(symbol: 'AUTO.CA', name: 'GB Auto', sector: 'Automotive', website: 'gbauto.com.eg'),
   ];
 
-  static const List<EgyptianStock> tobacco = [
-    EgyptianStock(symbol: 'EAST.CA', name: 'Eastern Company', sector: 'Tobacco'),
+  static List<EgyptianStock> get tobacco => [
+    EgyptianStock(symbol: 'EAST.CA', name: 'Eastern Company', sector: 'Tobacco', website: 'easternco.com.eg'),
   ];
 
-  static const List<EgyptianStock> education = [
+  static List<EgyptianStock> get education => [
     EgyptianStock(symbol: 'CIRA.CA', name: 'Cairo Investment & Real Estate', sector: 'Education'),
   ];
 
-  static const List<EgyptianStock> tourism = [
+  static List<EgyptianStock> get tourism => [
     EgyptianStock(symbol: 'EGTS.CA', name: 'Egyptian Resorts', sector: 'Tourism'),
   ];
 

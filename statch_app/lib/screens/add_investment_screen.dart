@@ -5,6 +5,7 @@ import '../models/market_data.dart';
 import '../services/investment_service.dart';
 import '../services/gold_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/stock_logo.dart';
 
 /// Screen for adding a new investment
 class AddInvestmentScreen extends StatefulWidget {
@@ -373,6 +374,15 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
                           itemBuilder: (context, index) {
                             final entry = _filteredSymbols[index];
                             final isGold = GoldService.isGoldSymbol(entry.key);
+                            final stockInfo = EgyptianStocks.all.firstWhere(
+                              (s) => s.symbol == entry.key,
+                              orElse: () => EgyptianStock(
+                                symbol: entry.key,
+                                name: entry.value['name']!,
+                                sector: entry.value['sector']!,
+                              ),
+                            );
+                            final isNew = stockInfo.isNew;
                             
                             return ListTile(
                               dense: true,
@@ -391,13 +401,37 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : null,
-                              title: Text(
-                                entry.key,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: isGold ? AppTheme.goldPrimary : null,
-                                ),
+                                  : Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        StockLogoCompact(
+                                          symbol: entry.key,
+                                          name: entry.value['name']!,
+                                          size: 36,
+                                          isPositive: true,
+                                        ),
+                                        if (isNew)
+                                          const Positioned(
+                                            top: -3,
+                                            right: -6,
+                                            child: NewBadge(fontSize: 7),
+                                          ),
+                                      ],
+                                    ),
+                              title: Row(
+                                children: [
+                                  Text(
+                                    entry.key.replaceAll('.CA', ''),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isGold ? AppTheme.goldPrimary : null,
+                                    ),
+                                  ),
+                                  if (isNew && isGold) ...[
+                                    const SizedBox(width: 6),
+                                    const NewBadge(fontSize: 8),
+                                  ],
+                                ],
                               ),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,6 +439,8 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
                                   Text(
                                     entry.value['name']!,
                                     style: Theme.of(context).textTheme.bodySmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
                                     entry.value['sector']!,
