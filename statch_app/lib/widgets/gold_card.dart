@@ -45,12 +45,12 @@ class GoldCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppTheme.goldPrimary.withOpacity(isDark ? 0.3 : 0.5),
+                color: AppTheme.goldPrimary.withValues(alpha: isDark ? 0.3 : 0.5),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.goldPrimary.withOpacity(0.15),
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.15),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -76,7 +76,7 @@ class GoldCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.goldPrimary.withOpacity(0.4),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -106,7 +106,7 @@ class GoldCard extends StatelessWidget {
                         Text(
                           'Per Gram',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: (isDark ? Colors.white : Colors.black87).withOpacity(0.6),
+                            color: (isDark ? Colors.white : Colors.black87).withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -149,7 +149,7 @@ class GoldCard extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

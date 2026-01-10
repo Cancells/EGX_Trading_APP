@@ -11,6 +11,7 @@ import '../widgets/statch_logo.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
+import 'portfolio_screen.dart';
 
 /// Main Dashboard Screen - Robinhood Style
 class DashboardScreen extends StatefulWidget {
@@ -95,7 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -149,6 +150,21 @@ class _DashboardScreenState extends State<DashboardScreen>
           const Divider(height: 1),
           
           // Menu Items
+          _buildMenuItem(
+            context,
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Portfolio',
+            subtitle: 'Track your investments',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PortfolioScreen(),
+                ),
+              );
+            },
+          ),
           _buildMenuItem(
             context,
             icon: Icons.account_circle_outlined,
@@ -206,6 +222,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     BuildContext context, {
     required IconData icon,
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
   }) {
     return ListTile(
@@ -215,6 +232,14 @@ class _DashboardScreenState extends State<DashboardScreen>
         weight: 300,
       ),
       title: Text(title),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.mutedText,
+              ),
+            )
+          : null,
       trailing: const Icon(Icons.chevron_right_rounded, size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
@@ -394,8 +419,8 @@ class _DashboardScreenState extends State<DashboardScreen>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: data.egx30.isPositive
-                    ? AppTheme.robinhoodGreen.withOpacity(0.1)
-                    : AppTheme.robinhoodRed.withOpacity(0.1),
+                    ? AppTheme.robinhoodGreen.withValues(alpha: 0.1)
+                    : AppTheme.robinhoodRed.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -448,7 +473,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -484,7 +509,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppTheme.robinhoodGreen.withOpacity(0.2)
+                ? AppTheme.robinhoodGreen.withValues(alpha: 0.2)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),

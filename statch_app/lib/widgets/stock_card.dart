@@ -32,7 +32,7 @@ class StockCard extends StatelessWidget {
               color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
               ),
             ),
             child: Row(
@@ -43,8 +43,8 @@ class StockCard extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: stock.isPositive 
-                        ? AppTheme.robinhoodGreen.withOpacity(0.1)
-                        : AppTheme.robinhoodRed.withOpacity(0.1),
+                        ? AppTheme.robinhoodGreen.withValues(alpha: 0.1)
+                        : AppTheme.robinhoodRed.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(

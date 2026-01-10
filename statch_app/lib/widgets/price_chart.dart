@@ -122,9 +122,9 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              _chartColor.withOpacity(0.3),
-                              _chartColor.withOpacity(0.05),
-                              _chartColor.withOpacity(0.0),
+                              _chartColor.withValues(alpha: 0.3),
+                              _chartColor.withValues(alpha: 0.05),
+                              _chartColor.withValues(alpha: 0.0),
                             ],
                             stops: const [0.0, 0.5, 1.0],
                           ),
@@ -143,10 +143,10 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
                     child: Container(
                       width: 1,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                         boxShadow: [
                           BoxShadow(
-                            color: _chartColor.withOpacity(0.3),
+                            color: _chartColor.withValues(alpha: 0.3),
                             blurRadius: 4,
                           ),
                         ],
@@ -166,7 +166,7 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: _chartColor.withOpacity(0.4),
+                            color: _chartColor.withValues(alpha: 0.4),
                             blurRadius: 8,
                             spreadRadius: 2,
                           ),
