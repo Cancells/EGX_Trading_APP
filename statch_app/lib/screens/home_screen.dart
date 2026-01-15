@@ -13,7 +13,7 @@ import '../widgets/price_chart.dart';
 import '../widgets/stock_card.dart';
 import '../widgets/statch_logo.dart';
 import '../widgets/market_switcher.dart';
-import '../widgets/stock_chip.dart';
+import '../widgets/stock_chip.dart'; // Imports StockChipData
 import 'profile_screen.dart';
 import 'about_screen.dart';
 
@@ -447,9 +447,15 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(height: 12),
                   StockChipList(
-                    stocks: _usStocks,
-                    onStockTap: (stock) {
-                      // Navigate to stock detail
+                    // FIXED: Convert List<Stock> to List<StockChipData>
+                    stocks: _currentStocks.map((s) => StockChipData(
+                      symbol: s.symbol,
+                      name: s.name,
+                      price: s.price,
+                      changePercent: s.changePercent,
+                    )).toList(),
+                    onStockTap: (stockData) {
+                      // Navigate logic here if needed
                     },
                   ),
                   const SizedBox(height: 24),
