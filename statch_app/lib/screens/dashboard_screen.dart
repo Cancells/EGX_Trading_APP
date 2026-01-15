@@ -31,6 +31,143 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  double _calculateTotalBalance(InvestmentService investmentService, MarketData marketData) {
+    double total = 0;
+    // Fallback: If user has no investments, show mock balance for demo purposes
+    if (investmentService.investments.isEmpty) {
+      return marketData.egx30.value * 0.15; // Demo Mode
+    }
+    
+    for (var investment in investmentService.investments) {
+      // Find current price for this investment symbol
+      final stock = marketData.stocks.firstWhere(
+        (s) => s.symbol == investment.symbol, 
+        orElse: () => Stock(symbol: '', name: '', price: 0, change: 0, changePercent: 0, priceHistory: [], lastUpdated: DateTime.now()) // Empty fallback
+      );
+      
+      if (stock.symbol.isNotEmpty) {
+        total += (investment.shares * stock.price);
+      } else {
+        // If stock not in live feed, use the saved price from investment as fallback
+        total += (investment.shares * investment.averagePrice); 
+      }
+    }
+    return total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: StreamBuilder<MarketData>(
+        stream: _marketRepo.marketStream,
+        builder: (context, snapshot) {
+          final isLoading = !snapshot.hasData;
+          final data = snapshot.data;
+
+          return RefreshIndicator(
+            onRefresh: _handleRefresh,
+            edgeOffset: 100,
+            color: AppTheme.robinhoodGreen,
+            backgroundColor: Theme.of(context).cardColor,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                _buildSliverAppBar(context),
+                
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      child: isLoading || data == null
+                          ? _buildSkeletonLoader(context)
+                          // Pass Services to the content builder
+                          : _buildDashboardContent(context, data),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDashboardContent(BuildContext context, MarketData data) {
+    // Consume InvestmentService to get real user holdings
+    return Consumer<InvestmentService>(
+      builder: (context, investmentService, child) {
+        
+        final totalBalance = _calculateTotalBalance(investmentService, data);
+        
+        // Calculate Day Change (Simplified logic for V2)
+        // In V3, you would sum((Current - Close) * Qty)
+        final dayChange = data.egx30.change * 10; 
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            
+            // 1. REAL Portfolio Card
+            PortfolioSummaryCard(
+              balance: totalBalance,
+              dayChange: dayChange,
+              dayChangePercent: data.egx30.changePercent,
+            ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+            
+            const SizedBox(height: 32),
+            
+            // 2. Market Overview
+            Text('Market Overview', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            _buildMainChartContainer(context, data).animate().fadeIn(delay: 100.ms),
+            
+            const SizedBox(height: 32),
+
+            // 3. NEW: Market News Section
+            const NewsFeedSection(), // <--- Added Here
+
+            const SizedBox(height: 32),
+            
+            // 4. Gold Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Gold Prices', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                TextButton.icon(
+                  onPressed: () => _showGoldCalculator(context, data),
+                  icon: const Icon(Icons.calculate_outlined, size: 18),
+                  label: const Text('Calculator'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.goldPrimary,
+                    backgroundColor: AppTheme.goldPrimary.withOpacity(0.1),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            GoldCard(goldPrice: data.gold24k),
+            const SizedBox(height: 12),
+            GoldCard(goldPrice: data.gold21k),
+            
+            const SizedBox(height: 32),
+            
+            // 5. Stocks
+            Text('Egyptian Stocks', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ...data.stocks.map((stock) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: StockCard(stock: stock),
+            )),
+            
+            const SizedBox(height: 80),
+          ],
+        );
+      },
+    );
+  }
   final PreferencesService _prefsService = PreferencesService();
   late MarketRepository _marketRepo;
 
@@ -401,3 +538,4 @@ class PortfolioHeader extends StatelessWidget {
     );
   }
 }
+
