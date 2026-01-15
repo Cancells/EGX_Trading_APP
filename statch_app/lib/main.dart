@@ -7,7 +7,8 @@ import 'services/preferences_service.dart';
 import 'services/investment_service.dart';
 import 'services/pin_service.dart';
 import 'services/currency_service.dart';
-import 'services/market_data_service.dart'; // Import this
+import 'services/market_data_service.dart'; 
+import 'repositories/market_repository.dart'; // Import the Repository
 import 'theme/dynamic_theme.dart';
 import 'widgets/error_overlay.dart';
 import 'screens/welcome_screen.dart';
@@ -25,46 +26,30 @@ void main() {
     await PinService().init();
     await CurrencyService().init();
     
-    // Initialize theme provider with saved preferences
     final themeProvider = DynamicThemeProvider();
     themeProvider.init();
     
-    // Set system UI overlay style based on theme
-    final isDark = themeProvider.themeSetting == ThemeSetting.dark;
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        systemNavigationBarColor: isDark ? Colors.black : Colors.white,
-        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-      ),
-    );
+    // Create and initialize repository
+    final marketRepo = MarketRepository();
     
-    // Set preferred orientations
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    
+    // We can fire-and-forget init here, or await it if we want data before app starts
+    // For better UX, we start it here so it loads while splash screen runs
+    marketRepo.init();
+
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: themeProvider),
           ChangeNotifierProvider(create: (_) => CurrencyService()),
-          // Added MarketDataService here for global access
-          Provider(create: (_) => MarketDataService()), 
+          Provider(create: (_) => MarketDataService()),
+          // Provide the Repository globally
+          Provider<MarketRepository>.value(value: marketRepo), 
         ],
         child: const StatchApp(),
       ),
     );
   }, (error, stackTrace) {
-    // Global error handler
-    ErrorOverlay.showErrorWithAutoDismiss(
-      error.toString(),
-      duration: const Duration(seconds: 8),
-    );
     debugPrint('ERROR: $error');
-    debugPrint('STACK TRACE: $stackTrace');
   });
 }
 
@@ -77,7 +62,6 @@ class StatchApp extends StatefulWidget {
 
 class _StatchAppState extends State<StatchApp> {
   final PreferencesService _prefsService = PreferencesService();
-  
   AppState _appState = AppState.loading;
 
   @override
@@ -92,25 +76,6 @@ class _StatchAppState extends State<StatchApp> {
     } else {
       setState(() => _appState = AppState.loading);
     }
-  }
-
-  void _updateSystemUI(DynamicThemeProvider themeProvider) {
-    final brightness = themeProvider.themeSetting == ThemeSetting.dark
-        ? Brightness.dark
-        : themeProvider.themeSetting == ThemeSetting.light
-            ? Brightness.light
-            : MediaQuery.of(context).platformBrightness;
-    
-    final isDark = brightness == Brightness.dark;
-    
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        systemNavigationBarColor: isDark ? Colors.black : Colors.white,
-        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-      ),
-    );
   }
 
   void _onWelcomeComplete() async {
@@ -137,7 +102,6 @@ class _StatchAppState extends State<StatchApp> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final themeProvider = context.read<DynamicThemeProvider>();
           themeProvider.setDynamicSchemes(lightDynamic, darkDynamic);
-          _updateSystemUI(themeProvider);
         });
 
         return Consumer<DynamicThemeProvider>(
@@ -149,14 +113,7 @@ class _StatchAppState extends State<StatchApp> {
               darkTheme: themeProvider.getDarkTheme(),
               themeMode: themeProvider.themeMode,
               builder: (context, child) {
-                return MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    textScaler: const TextScaler.linear(1.0),
-                  ),
-                  child: ErrorOverlay(
-                    child: child ?? const SizedBox.shrink(),
-                  ),
-                );
+                return ErrorOverlay(child: child ?? const SizedBox.shrink());
               },
               home: _buildHomeWidget(),
             );
@@ -183,9 +140,4 @@ class _StatchAppState extends State<StatchApp> {
   }
 }
 
-enum AppState {
-  loading,
-  welcome,
-  securityGate,
-  authenticated,
-}
+enum AppState { loading, welcome, securityGate, authenticated }
