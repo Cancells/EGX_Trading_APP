@@ -1,6 +1,54 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
+// Inside lib/widgets/index_carousel.dart
+
+// ... imports
+
+class IndexCarousel extends StatelessWidget {
+  final double egxValue;
+  final double egxChange;
+  final double goldValue;
+  final double goldChange;
+  final double? silverValue; // Add optional silver
+  final double? silverChange;
+
+  const IndexCarousel({
+    super.key,
+    required this.egxValue,
+    required this.egxChange,
+    required this.goldValue,
+    required this.goldChange,
+    this.silverValue,
+    this.silverChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          _buildCard(context, 'EGX 30', egxValue, egxChange, isCurrency: false),
+          const SizedBox(width: 12),
+          // Show 21K as it's the standard in Egypt
+          _buildCard(context, 'Gold 21K', goldValue, goldChange, isCurrency: true),
+          const SizedBox(width: 12),
+          // Show Real Silver if available
+          if (silverValue != null) ...[
+             _buildCard(context, 'Silver 999', silverValue!, silverChange ?? 0, isCurrency: true),
+             const SizedBox(width: 12),
+          ],
+          _buildCard(context, 'USD/EGP', 50.60, 0.00, isCurrency: true, isStable: true), 
+        ],
+      ),
+    );
+  }
+  
+  // ... existing _buildCard implementation ...
+}
+
 class IndexCarousel extends StatelessWidget {
   final double egxValue;
   final double egxChange;

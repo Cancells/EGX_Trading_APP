@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-// Market Data Models for Egyptian Market
+// Market Data Models
 
 class MarketIndex {
   final String name;
@@ -45,6 +45,7 @@ class MarketIndex {
     );
   }
 
+  // Added copyWith for easier state updates
   MarketIndex copyWith({
     String? name,
     String? symbol,
@@ -85,6 +86,25 @@ class GoldPrice {
 
   bool get isPositive => change >= 0;
 
+  // Crucial: copyWith for Repository updates
+  GoldPrice copyWith({
+    String? karat,
+    double? pricePerGram,
+    double? change,
+    double? changePercent,
+    DateTime? lastUpdated,
+    String? description,
+  }) {
+    return GoldPrice(
+      karat: karat ?? this.karat,
+      pricePerGram: pricePerGram ?? this.pricePerGram,
+      change: change ?? this.change,
+      changePercent: changePercent ?? this.changePercent,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      description: description ?? this.description,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'karat': karat,
     'pricePerGram': pricePerGram,
@@ -102,24 +122,6 @@ class GoldPrice {
       changePercent: (json['changePercent'] as num).toDouble(),
       lastUpdated: DateTime.parse(json['lastUpdated']),
       description: json['description'],
-    );
-  }
-
-  GoldPrice copyWith({
-    String? karat,
-    double? pricePerGram,
-    double? change,
-    double? changePercent,
-    DateTime? lastUpdated,
-    String? description,
-  }) {
-    return GoldPrice(
-      karat: karat ?? this.karat,
-      pricePerGram: pricePerGram ?? this.pricePerGram,
-      change: change ?? this.change,
-      changePercent: changePercent ?? this.changePercent,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
-      description: description ?? this.description,
     );
   }
 }
@@ -152,20 +154,6 @@ class GoldPoundPriceData {
       change: (json['change'] as num).toDouble(),
       changePercent: (json['changePercent'] as num).toDouble(),
       lastUpdated: DateTime.parse(json['lastUpdated']),
-    );
-  }
-
-  GoldPoundPriceData copyWith({
-    double? price,
-    double? change,
-    double? changePercent,
-    DateTime? lastUpdated,
-  }) {
-    return GoldPoundPriceData(
-      price: price ?? this.price,
-      change: change ?? this.change,
-      changePercent: changePercent ?? this.changePercent,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
 }
@@ -252,38 +240,6 @@ class Stock {
       marketType: json['marketType'],
     );
   }
-
-  Stock copyWith({
-    String? symbol,
-    String? name,
-    double? price,
-    double? change,
-    double? changePercent,
-    List<double>? priceHistory,
-    DateTime? lastUpdated,
-    String? sector,
-    String? website,
-    DateTime? listedDate,
-    String? currencySymbol,
-    int? decimals,
-    String? marketType,
-  }) {
-    return Stock(
-      symbol: symbol ?? this.symbol,
-      name: name ?? this.name,
-      price: price ?? this.price,
-      change: change ?? this.change,
-      changePercent: changePercent ?? this.changePercent,
-      priceHistory: priceHistory ?? this.priceHistory,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
-      sector: sector ?? this.sector,
-      website: website ?? this.website,
-      listedDate: listedDate ?? this.listedDate,
-      currencySymbol: currencySymbol ?? this.currencySymbol,
-      decimals: decimals ?? this.decimals,
-      marketType: marketType ?? this.marketType,
-    );
-  }
 }
 
 class MarketData {
@@ -292,6 +248,7 @@ class MarketData {
   final GoldPrice gold21k;
   final GoldPrice? gold18k;
   final GoldPoundPriceData? goldPound;
+  final GoldPrice? silver; // <--- Added Silver
   final List<Stock> stocks;
   final DateTime lastUpdated;
 
@@ -301,6 +258,7 @@ class MarketData {
     required this.gold21k,
     this.gold18k,
     this.goldPound,
+    this.silver, // <--- Added to constructor
     required this.stocks,
     required this.lastUpdated,
   });
@@ -311,6 +269,7 @@ class MarketData {
     'gold21k': gold21k.toJson(),
     'gold18k': gold18k?.toJson(),
     'goldPound': goldPound?.toJson(),
+    'silver': silver?.toJson(), // <--- Added to JSON
     'stocks': stocks.map((s) => s.toJson()).toList(),
     'lastUpdated': lastUpdated.toIso8601String(),
   };
@@ -322,13 +281,15 @@ class MarketData {
       gold21k: GoldPrice.fromJson(json['gold21k']),
       gold18k: json['gold18k'] != null ? GoldPrice.fromJson(json['gold18k']) : null,
       goldPound: json['goldPound'] != null ? GoldPoundPriceData.fromJson(json['goldPound']) : null,
+      silver: json['silver'] != null ? GoldPrice.fromJson(json['silver']) : null, // <--- Added from JSON
       stocks: (json['stocks'] as List).map((e) => Stock.fromJson(e)).toList(),
       lastUpdated: DateTime.parse(json['lastUpdated']),
     );
   }
 }
 
-/// Egyptian Stock info for reference
+// Keep EgyptianStock / EgyptianStocks classes as is
+// ... (The rest of the file remains the same as your existing code)
 class EgyptianStock {
   final String symbol;
   final String name;
@@ -352,7 +313,6 @@ class EgyptianStock {
   }
 }
 
-/// List of all Egyptian stocks with website and listing date info
 class EgyptianStocks {
   static List<EgyptianStock> get preciousMetals => [
     const EgyptianStock(symbol: 'GOLD_24K', name: 'Gold 24K (Gram)', sector: 'Precious Metals'),

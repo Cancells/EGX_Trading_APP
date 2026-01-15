@@ -149,6 +149,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildModernContent(BuildContext context, MarketData data) {
+    // ... inside _buildModernContent(BuildContext context, MarketData data) {
+
+// ... Portfolio Summary Card code ...
+
+            const SizedBox(height: 32),
+            
+            // 3. Market Indices Carousel
+            Text('Indices', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            
+            // UPDATE THIS WIDGET
+            IndexCarousel(
+              egxValue: data.egx30.value,
+              egxChange: data.egx30.changePercent,
+              goldValue: data.gold21k.pricePerGram,
+              goldChange: data.gold21k.changePercent,
+              silverValue: data.silver?.pricePerGram, // <--- Passing Silver Price
+              silverChange: data.silver?.changePercent, // <--- Passing Silver Change
+            ).animate().fadeIn(delay: 200.ms),
+            
+            const SizedBox(height: 32),
+
+// ... rest of the code
     return Consumer<InvestmentService>(
       builder: (context, investmentService, _) {
         final balance = _calculateTotalBalance(investmentService, data);
