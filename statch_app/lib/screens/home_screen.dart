@@ -13,7 +13,7 @@ import '../widgets/price_chart.dart';
 import '../widgets/stock_card.dart';
 import '../widgets/statch_logo.dart';
 import '../widgets/market_switcher.dart';
-import '../widgets/stock_chip.dart'; // Imports StockChipData
+import '../widgets/stock_chip.dart';
 import 'profile_screen.dart';
 import 'about_screen.dart';
 
@@ -189,7 +189,6 @@ class _HomeScreenState extends State<HomeScreen>
     final hasCustomPhoto = _prefsService.customAvatarPath != null;
     
     if (hasCustomPhoto) {
-      // TODO: Show custom photo from file
       return CircleAvatar(
         radius: radius,
         backgroundColor: AppTheme.robinhoodGreen,
@@ -406,7 +405,6 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
           actions: [
-            // Profile Button (Top-Right)
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: GestureDetector(
@@ -429,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 const SizedBox(height: 16),
                 
-                // Market Switcher (EGX, US, Crypto)
+                // Market Switcher
                 MarketSwitcher(
                   selected: _selectedMarket,
                   onChanged: _onMarketChanged,
@@ -437,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen>
                 
                 const SizedBox(height: 24),
 
-                // US Market Ticker Strip (when US selected)
+                // US Market Ticker Strip
                 if (_selectedMarket == MarketType.us) ...[
                   Text(
                     'Trending',
@@ -447,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(height: 12),
                   StockChipList(
-                    // FIXED: Convert List<Stock> to List<StockChipData>
+                    // FIXED: Mapping List<Stock> to List<StockChipData>
                     stocks: _currentStocks.map((s) => StockChipData(
                       symbol: s.symbol,
                       name: s.name,
@@ -455,19 +453,19 @@ class _HomeScreenState extends State<HomeScreen>
                       changePercent: s.changePercent,
                     )).toList(),
                     onStockTap: (stockData) {
-                      // Navigate logic here if needed
+                      // Navigate to details
                     },
                   ),
                   const SizedBox(height: 24),
                 ],
 
-                // Precious Metals Section (at top when EGX selected)
+                // Precious Metals Section
                 if (_selectedMarket == MarketType.egx) ...[
                   _buildPreciousMetalsSection(context, isDark),
                   const SizedBox(height: 32),
                 ],
                 
-                // Portfolio Value Header
+                // Portfolio Value Header (High Performance)
                 _buildPortfolioHeader(context, data),
                 
                 const SizedBox(height: 24),
@@ -477,13 +475,13 @@ class _HomeScreenState extends State<HomeScreen>
                 
                 const SizedBox(height: 32),
                 
-                // Legacy Gold Section (when US selected or as backup)
+                // Legacy Gold Section
                 if (_selectedMarket == MarketType.us) ...[
                   _buildGoldSection(context),
                   const SizedBox(height: 32),
                 ],
                 
-                // Stocks Section with market-specific title
+                // Stocks Section
                 _buildStocksSection(context, data),
                 
                 const SizedBox(height: 40),
@@ -496,7 +494,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildStocksSection(BuildContext context, MarketData data) {
-    // Determine which stocks to show based on selected market
     List<Stock> stocksToShow;
     String sectionTitle;
     
@@ -515,13 +512,11 @@ class _HomeScreenState extends State<HomeScreen>
         break;
     }
     
-    // Get market hours for status display
     final marketHours = _multiMarketService.getMarketHours(_selectedMarket);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Header with market status
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -541,7 +536,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ],
             ),
-            // Market status badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -581,7 +575,6 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         const SizedBox(height: 16),
         
-        // Loading indicator
         if (_isLoadingMarket)
           const Center(
             child: Padding(
@@ -629,7 +622,6 @@ class _HomeScreenState extends State<HomeScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Header with Workmanship Toggle
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -658,7 +650,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ],
             ),
-            // Per Gram Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -678,13 +669,9 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         
         const SizedBox(height: 12),
-        
-        // Workmanship Toggle
         _buildWorkmanshipToggle(context, isDark),
-        
         const SizedBox(height: 16),
         
-        // Gold Price Cards
         ListenableBuilder(
           listenable: _goldService,
           builder: (context, _) {
@@ -693,7 +680,6 @@ class _HomeScreenState extends State<HomeScreen>
             }
             
             if (_goldService.prices.isEmpty) {
-              // Fallback to mock data
               return Column(
                 children: [
                   GoldCard(goldPrice: _marketData!.gold24k),
@@ -705,7 +691,6 @@ class _HomeScreenState extends State<HomeScreen>
             
             return Column(
               children: [
-                // 24K Gold
                 _buildPreciousMetalCard(
                   context,
                   isDark,
@@ -718,8 +703,6 @@ class _HomeScreenState extends State<HomeScreen>
                   formatter: formatter,
                 ),
                 const SizedBox(height: 12),
-                
-                // 21K Gold
                 _buildPreciousMetalCard(
                   context,
                   isDark,
@@ -732,8 +715,6 @@ class _HomeScreenState extends State<HomeScreen>
                   formatter: formatter,
                 ),
                 const SizedBox(height: 12),
-                
-                // 18K Gold
                 _buildPreciousMetalCard(
                   context,
                   isDark,
@@ -746,8 +727,6 @@ class _HomeScreenState extends State<HomeScreen>
                   formatter: formatter,
                 ),
                 const SizedBox(height: 12),
-                
-                // Gold Pound (Geneh)
                 if (_goldService.goldPoundPrice != null)
                   _buildGoldPoundCard(context, isDark, formatter),
               ],
@@ -755,7 +734,6 @@ class _HomeScreenState extends State<HomeScreen>
           },
         ),
         
-        // Exchange Rate Info
         ListenableBuilder(
           listenable: _goldService,
           builder: (context, _) {
@@ -1115,6 +1093,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildPortfolioHeader(BuildContext context, MarketData data) {
     final formatter = NumberFormat.currency(symbol: '', decimalDigits: 2);
     
+    // Performance: Uses ValueListenableBuilder to rebuild only this widget on scrub
     return ValueListenableBuilder<double?>(
       valueListenable: _selectedPrice,
       builder: (context, selectedPrice, child) {
@@ -1256,12 +1235,10 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
         const SizedBox(height: 16),
-        // Gold cards for each karat
         ListenableBuilder(
           listenable: _goldService,
           builder: (context, _) {
             if (_goldService.prices.isEmpty) {
-              // Use mock data
               return Column(
                 children: [
                   GoldCard(goldPrice: _marketData!.gold24k),

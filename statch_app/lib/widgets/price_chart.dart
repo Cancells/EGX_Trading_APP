@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Required for HapticFeedback
 import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_theme.dart';
 
-/// High-fidelity Robinhood-style price chart with touch interaction
 class PriceChart extends StatefulWidget {
   final List<double> priceHistory;
   final bool isPositive;
@@ -58,9 +58,7 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
     }
   }
 
-  Color get _chartColor => widget.isPositive 
-      ? AppTheme.chartGreen 
-      : AppTheme.chartRed;
+  Color get _chartColor => widget.isPositive ? AppTheme.chartGreen : AppTheme.chartRed;
 
   List<FlSpot> get _spots {
     return widget.priceHistory.asMap().entries.map((entry) {
@@ -111,7 +109,7 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
                       LineChartBarData(
                         spots: _getAnimatedSpots(),
                         isCurved: true,
-                        curveSmoothness: 0.3,
+                        curveSmoothness: 0.25,
                         color: _chartColor,
                         barWidth: 2.5,
                         isStrokeCapRound: true,
@@ -122,11 +120,10 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              _chartColor.withValues(alpha: 0.3),
-                              _chartColor.withValues(alpha: 0.05),
+                              _chartColor.withValues(alpha: 0.25),
                               _chartColor.withValues(alpha: 0.0),
                             ],
-                            stops: const [0.0, 0.5, 1.0],
+                            stops: const [0.0, 0.8],
                           ),
                         ),
                       ),
@@ -134,7 +131,6 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
                   ),
                   duration: Duration.zero,
                 ),
-                // Vertical touch indicator line
                 if (_touchedX != null)
                   Positioned(
                     left: _touchedX,
@@ -142,34 +138,26 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
                     bottom: 0,
                     child: Container(
                       width: 1,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _chartColor.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
-                // Touch point indicator
                 if (_touchedIndex != null && _touchedX != null)
                   Positioned(
-                    left: _touchedX! - 6,
-                    top: _getYPosition(_touchedIndex!) - 6,
+                    left: _touchedX! - 8,
+                    top: _getYPosition(_touchedIndex!) - 8,
                     child: Container(
-                      width: 12,
-                      height: 12,
+                      width: 16,
+                      height: 16,
                       decoration: BoxDecoration(
-                        color: _chartColor,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         shape: BoxShape.circle,
+                        border: Border.all(color: _chartColor, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: _chartColor.withValues(alpha: 0.4),
-                            blurRadius: 8,
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 4,
                             spreadRadius: 2,
-                          ),
+                          )
                         ],
                       ),
                     ),
@@ -185,7 +173,6 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
   List<FlSpot> _getAnimatedSpots() {
     final animatedCount = (_spots.length * _animation.value).ceil();
     if (animatedCount <= 0) return [];
-    
     return _spots.sublist(0, animatedCount.clamp(0, _spots.length));
   }
 
@@ -197,13 +184,18 @@ class _PriceChartState extends State<PriceChart> with SingleTickerProviderStateM
     final index = ((x / chartWidth) * (widget.priceHistory.length - 1)).round();
     final clampedIndex = index.clamp(0, widget.priceHistory.length - 1);
 
-    setState(() {
-      _touchedX = x;
-      _touchedIndex = clampedIndex;
-    });
+    if (_touchedIndex != clampedIndex) {
+      // HAPTIC FEEDBACK ADDED HERE
+      HapticFeedback.selectionClick();
+      
+      setState(() {
+        _touchedX = x;
+        _touchedIndex = clampedIndex;
+      });
 
-    widget.selectedPriceNotifier?.value = widget.priceHistory[clampedIndex];
-    widget.selectedIndexNotifier?.value = clampedIndex;
+      widget.selectedPriceNotifier?.value = widget.priceHistory[clampedIndex];
+      widget.selectedIndexNotifier?.value = clampedIndex;
+    }
   }
 
   void _clearTouch() {

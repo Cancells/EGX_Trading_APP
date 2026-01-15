@@ -7,7 +7,7 @@ import 'services/preferences_service.dart';
 import 'services/investment_service.dart';
 import 'services/pin_service.dart';
 import 'services/currency_service.dart';
-import 'services/cache_service.dart';
+import 'services/market_data_service.dart'; // Import this
 import 'theme/dynamic_theme.dart';
 import 'widgets/error_overlay.dart';
 import 'screens/welcome_screen.dart';
@@ -51,6 +51,8 @@ void main() {
         providers: [
           ChangeNotifierProvider.value(value: themeProvider),
           ChangeNotifierProvider(create: (_) => CurrencyService()),
+          // Added MarketDataService here for global access
+          Provider(create: (_) => MarketDataService()), 
         ],
         child: const StatchApp(),
       ),
@@ -75,7 +77,6 @@ class StatchApp extends StatefulWidget {
 
 class _StatchAppState extends State<StatchApp> {
   final PreferencesService _prefsService = PreferencesService();
-  final PinService _pinService = PinService();
   
   AppState _appState = AppState.loading;
 
@@ -86,11 +87,9 @@ class _StatchAppState extends State<StatchApp> {
   }
 
   Future<void> _initializeApp() async {
-    // Determine initial app state
     if (!_prefsService.hasSeenWelcome) {
       setState(() => _appState = AppState.welcome);
     } else {
-      // Show loading screen for data initialization
       setState(() => _appState = AppState.loading);
     }
   }
@@ -135,7 +134,6 @@ class _StatchAppState extends State<StatchApp> {
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        // Update dynamic theme provider
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final themeProvider = context.read<DynamicThemeProvider>();
           themeProvider.setDynamicSchemes(lightDynamic, darkDynamic);
