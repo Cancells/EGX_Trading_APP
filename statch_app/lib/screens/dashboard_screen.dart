@@ -6,13 +6,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/market_data.dart';
 import '../repositories/market_repository.dart';
 import '../services/preferences_service.dart';
+import '../services/investment_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/gold_card.dart';
-import '../widgets/price_chart.dart';
-import '../widgets/stock_card.dart';
 import '../widgets/statch_logo.dart';
-import '../widgets/portfolio_summary_card.dart'; // NEW
-import '../widgets/gold_calculator_sheet.dart';  // NEW
+import '../widgets/portfolio_summary_card.dart';
+import '../widgets/gold_calculator_sheet.dart';
+import '../widgets/index_carousel.dart'; // NEW
+import '../widgets/modern_stock_card.dart'; // NEW
 import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
@@ -31,26 +31,34 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  final PreferencesService _prefsService = PreferencesService();
+  late MarketRepository _marketRepo;
+
+  @override
+  void initState() {
+    super.initState();
+    _marketRepo = context.read<MarketRepository>();
+  }
+
+  Future<void> _handleRefresh() async {
+    HapticFeedback.mediumImpact();
+    await _marketRepo.refresh();
+  }
+
+  // Calculate real user balance
   double _calculateTotalBalance(InvestmentService investmentService, MarketData marketData) {
     double total = 0;
-    // Fallback: If user has no investments, show mock balance for demo purposes
     if (investmentService.investments.isEmpty) {
-      return marketData.egx30.value * 0.15; // Demo Mode
+      return 0.0; // Clean start
     }
-    
     for (var investment in investmentService.investments) {
-      // Find current price for this investment symbol
       final stock = marketData.stocks.firstWhere(
         (s) => s.symbol == investment.symbol, 
-        orElse: () => Stock(symbol: '', name: '', price: 0, change: 0, changePercent: 0, priceHistory: [], lastUpdated: DateTime.now()) // Empty fallback
+        orElse: () => Stock(symbol: '', name: '', price: 0, change: 0, changePercent: 0, priceHistory: [], lastUpdated: DateTime.now())
       );
       
-      if (stock.symbol.isNotEmpty) {
-        total += (investment.shares * stock.price);
-      } else {
-        // If stock not in live feed, use the saved price from investment as fallback
-        total += (investment.shares * investment.averagePrice); 
-      }
+      double price = stock.symbol.isNotEmpty ? stock.price : investment.averagePrice;
+      total += (investment.shares * price);
     }
     return total;
   }
@@ -66,14 +74,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           return RefreshIndicator(
             onRefresh: _handleRefresh,
-            edgeOffset: 100,
             color: AppTheme.robinhoodGreen,
             backgroundColor: Theme.of(context).cardColor,
             child: CustomScrollView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              physics: const BouncingScrollPhysics(),
               slivers: [
                 _buildSliverAppBar(context),
-                
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -81,144 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       duration: const Duration(milliseconds: 400),
                       child: isLoading || data == null
                           ? _buildSkeletonLoader(context)
-                          // Pass Services to the content builder
-                          : _buildDashboardContent(context, data),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildDashboardContent(BuildContext context, MarketData data) {
-    // Consume InvestmentService to get real user holdings
-    return Consumer<InvestmentService>(
-      builder: (context, investmentService, child) {
-        
-        final totalBalance = _calculateTotalBalance(investmentService, data);
-        
-        // Calculate Day Change (Simplified logic for V2)
-        // In V3, you would sum((Current - Close) * Qty)
-        final dayChange = data.egx30.change * 10; 
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            
-            // 1. REAL Portfolio Card
-            PortfolioSummaryCard(
-              balance: totalBalance,
-              dayChange: dayChange,
-              dayChangePercent: data.egx30.changePercent,
-            ).animate().fadeIn().slideY(begin: 0.1, end: 0),
-            
-            const SizedBox(height: 32),
-            
-            // 2. Market Overview
-            Text('Market Overview', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _buildMainChartContainer(context, data).animate().fadeIn(delay: 100.ms),
-            
-            const SizedBox(height: 32),
-
-            // 3. NEW: Market News Section
-            const NewsFeedSection(), // <--- Added Here
-
-            const SizedBox(height: 32),
-            
-            // 4. Gold Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Gold Prices', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                TextButton.icon(
-                  onPressed: () => _showGoldCalculator(context, data),
-                  icon: const Icon(Icons.calculate_outlined, size: 18),
-                  label: const Text('Calculator'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.goldPrimary,
-                    backgroundColor: AppTheme.goldPrimary.withOpacity(0.1),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            GoldCard(goldPrice: data.gold24k),
-            const SizedBox(height: 12),
-            GoldCard(goldPrice: data.gold21k),
-            
-            const SizedBox(height: 32),
-            
-            // 5. Stocks
-            Text('Egyptian Stocks', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            ...data.stocks.map((stock) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: StockCard(stock: stock),
-            )),
-            
-            const SizedBox(height: 80),
-          ],
-        );
-      },
-    );
-  }
-  final PreferencesService _prefsService = PreferencesService();
-  late MarketRepository _marketRepo;
-
-  final ValueNotifier<double?> _selectedPrice = ValueNotifier(null);
-  final ValueNotifier<int?> _selectedIndex = ValueNotifier(null);
-
-  @override
-  void initState() {
-    super.initState();
-    _marketRepo = context.read<MarketRepository>();
-  }
-
-  @override
-  void dispose() {
-    _selectedPrice.dispose();
-    _selectedIndex.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleRefresh() async {
-    HapticFeedback.mediumImpact();
-    await _marketRepo.refresh();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: StreamBuilder<MarketData>(
-        stream: _marketRepo.marketStream,
-        builder: (context, snapshot) {
-          final isLoading = !snapshot.hasData;
-          final data = snapshot.data;
-
-          return RefreshIndicator(
-            onRefresh: _handleRefresh,
-            edgeOffset: 100,
-            color: AppTheme.robinhoodGreen,
-            backgroundColor: Theme.of(context).cardColor,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              slivers: [
-                _buildSliverAppBar(context),
-                
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      child: isLoading || data == null
-                          ? _buildSkeletonLoader(context)
-                          : _buildDashboardContent(context, data),
+                          : _buildModernContent(context, data),
                     ),
                   ),
                 ),
@@ -238,36 +107,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
       snap: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
       elevation: 0,
+      centerTitle: false,
+      titleSpacing: 0,
       leading: const Padding(
-        padding: EdgeInsets.only(left: 16),
-        child: StatchLogo(size: 32),
+        padding: EdgeInsets.only(left: 20),
+        child: StatchLogo(size: 28),
       ),
+      leadingWidth: 50,
       title: Text(
         'Statch',
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
             ),
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_none_rounded),
+          onPressed: () {}, // TODO: Notifications
+        ),
         Padding(
-          padding: const EdgeInsets.only(right: 16),
+          padding: const EdgeInsets.only(right: 20, left: 8),
           child: GestureDetector(
             onTap: () => _showProfileMenu(context),
-            child: Hero(
-              tag: 'profile_menu_avatar',
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: AppTheme.robinhoodGreen.withOpacity(0.2),
-                child: Text(
-                  _prefsService.userName.isNotEmpty 
-                      ? _prefsService.userName[0].toUpperCase() 
-                      : 'I',
-                  style: const TextStyle(
-                    color: AppTheme.robinhoodGreen,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: AppTheme.robinhoodGreen.withOpacity(0.15),
+              child: Text(
+                _prefsService.userName.isNotEmpty ? _prefsService.userName[0].toUpperCase() : 'I',
+                style: const TextStyle(
+                  color: AppTheme.robinhoodGreen,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
                 ),
               ),
             ),
@@ -277,130 +148,105 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSkeletonLoader(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onSurface.withOpacity(0.08);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Container(width: double.infinity, height: 160, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24))).animate(onPlay: (c) => c.repeat()).shimmer(duration: 1200.ms),
-        const SizedBox(height: 24),
-        Container(height: 220, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20))).animate(onPlay: (c) => c.repeat()).shimmer(duration: 1200.ms, delay: 200.ms),
-        const SizedBox(height: 32),
-        Container(width: 120, height: 24, color: color),
-      ],
-    );
-  }
-
-  Widget _buildDashboardContent(BuildContext context, MarketData data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
+  Widget _buildModernContent(BuildContext context, MarketData data) {
+    return Consumer<InvestmentService>(
+      builder: (context, investmentService, _) {
+        final balance = _calculateTotalBalance(investmentService, data);
         
-        // 1. Personal Wealth (Privacy-First Card)
-        // Note: Using simulated balance logic for demo. Hook this to InvestmentService in future.
-        PortfolioSummaryCard(
-          balance: data.egx30.value * 75.5, 
-          dayChange: data.egx30.change * 75.5,
-          dayChangePercent: data.egx30.changePercent,
-        ).animate().fadeIn().slideY(begin: 0.1, end: 0),
-        
-        const SizedBox(height: 32),
-        
-        // 2. Market Index Chart
-        Text(
-          'Market Overview',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        _buildMainChartContainer(context, data).animate().fadeIn(delay: 100.ms),
-        
-        const SizedBox(height: 32),
-        
-        // 3. Gold Section with Calculator
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Gold Prices',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            const SizedBox(height: 10),
+            
+            // 1. Portfolio Card
+            PortfolioSummaryCard(
+              balance: balance,
+              dayChange: data.egx30.change, // Simplified for demo
+              dayChangePercent: data.egx30.changePercent,
+            ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+            
+            const SizedBox(height: 24),
+            
+            // 2. Quick Actions
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildQuickAction(context, Icons.add, 'Add Asset', () {
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => const PortfolioScreen()));
+                }),
+                _buildQuickAction(context, Icons.calculate_outlined, 'Gold Calc', () {
+                  _showGoldCalculator(context, data);
+                }),
+                _buildQuickAction(context, Icons.newspaper_outlined, 'News', () {}),
+                _buildQuickAction(context, Icons.more_horiz, 'More', () {}),
+              ],
             ),
-            TextButton.icon(
-              onPressed: () => _showGoldCalculator(context, data),
-              icon: const Icon(Icons.calculate_outlined, size: 18),
-              label: const Text('Calculator'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.goldPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                backgroundColor: AppTheme.goldPrimary.withOpacity(0.1),
-              ),
+            
+            const SizedBox(height: 32),
+            
+            // 3. Market Indices Carousel
+            Text('Indices', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            // Pass negative value for Gold to simulate realistic mixed market
+            IndexCarousel(
+              egxValue: data.egx30.value,
+              egxChange: data.egx30.changePercent,
+              goldValue: data.gold24k.pricePerGram,
+              goldChange: data.gold24k.changePercent,
+            ).animate().fadeIn(delay: 200.ms),
+            
+            const SizedBox(height: 32),
+            
+            // 4. Watchlist / Stocks
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Top Movers', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                Text('See All', style: TextStyle(color: AppTheme.robinhoodGreen, fontWeight: FontWeight.bold)),
+              ],
             ),
+            const SizedBox(height: 16),
+            ...data.stocks.map((stock) => ModernStockCard(stock: stock).animate().fadeIn().slideX()),
+            
+            const SizedBox(height: 80),
           ],
-        ),
-        const SizedBox(height: 16),
-        GoldCard(goldPrice: data.gold24k),
-        const SizedBox(height: 12),
-        GoldCard(goldPrice: data.gold21k),
-        
-        const SizedBox(height: 32),
-        
-        // 4. Stocks
-        Text(
-          'Egyptian Stocks', 
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        ...data.stocks.map((stock) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: StockCard(stock: stock),
-        )),
-        
-        const SizedBox(height: 80),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildMainChartContainer(BuildContext context, MarketData data) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Container(
-      padding: const EdgeInsets.fromLTRB(0, 24, 0, 16),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+  Widget _buildQuickAction(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: Column(
         children: [
-          // Index Header integrated inside chart container for better UX
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: PortfolioHeader(
-              data: data, 
-              selectedPriceNotifier: _selectedPrice,
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))
+              ],
             ),
+            child: Icon(icon, color: AppTheme.robinhoodGreen, size: 22),
           ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: PriceChart(
-              priceHistory: data.egx30.priceHistory,
-              isPositive: data.egx30.isPositive,
-              selectedPriceNotifier: _selectedPrice,
-              selectedIndexNotifier: _selectedIndex,
-              height: 220,
-            ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildSkeletonLoader(BuildContext context) {
+    // Keep your existing skeleton loader or use a simplified one
+    return Container(); 
   }
 
   void _showGoldCalculator(BuildContext context, MarketData data) {
@@ -409,9 +255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: GoldCalculatorSheet(
           price24k: data.gold24k.pricePerGram,
           price21k: data.gold21k.pricePerGram,
@@ -421,121 +265,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Keep _showProfileMenu and _buildProfileMenu from previous code
   void _showProfileMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => _buildProfileMenu(context),
-    );
-  }
-
-  Widget _buildProfileMenu(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: const EdgeInsets.only(bottom: 30),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40, height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 24),
-          ListTile(
-            leading: CircleAvatar(
-              radius: 24,
-              backgroundColor: AppTheme.robinhoodGreen,
-              child: Text(
-                _prefsService.userName.isNotEmpty ? _prefsService.userName[0].toUpperCase() : 'I',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            title: Text(_prefsService.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('Egyptian Investor'),
-          ),
-          const Divider(),
-          _buildMenuItem(context, Icons.pie_chart_outline, 'Portfolio', () {
-             Navigator.pop(context);
-             Navigator.push(context, MaterialPageRoute(builder: (_) => const PortfolioScreen()));
-          }),
-          _buildMenuItem(context, Icons.person_outline, 'Profile', () {
-             Navigator.pop(context);
-             Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          }),
-          _buildMenuItem(context, Icons.settings_outlined, 'Settings', () {
-             Navigator.pop(context);
-             Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsScreen(onThemeToggle: widget.onThemeToggle)));
-          }),
-           _buildMenuItem(context, Icons.info_outline, 'About', () {
-             Navigator.pop(context);
-             Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(BuildContext context, IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, size: 22),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
-      onTap: onTap,
-    );
+     Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
   }
 }
-
-// PortfolioHeader for the Market Index (Chart Header)
-class PortfolioHeader extends StatelessWidget {
-  final MarketData data;
-  final ValueNotifier<double?> selectedPriceNotifier;
-  
-  const PortfolioHeader({
-    super.key, 
-    required this.data, 
-    required this.selectedPriceNotifier
-  });
-  
-  @override
-  Widget build(BuildContext context) {
-    final formatter = NumberFormat.currency(symbol: 'EGP ', decimalDigits: 2);
-    
-    return ValueListenableBuilder<double?>(
-      valueListenable: selectedPriceNotifier,
-      builder: (context, selectedPrice, _) {
-        final displayValue = selectedPrice ?? data.egx30.value;
-        final isScrubbing = selectedPrice != null;
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isScrubbing ? 'Selected Value' : 'EGX 30 Index', 
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.mutedText,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              formatter.format(displayValue), 
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 28,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
