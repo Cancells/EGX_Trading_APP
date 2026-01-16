@@ -26,8 +26,7 @@ android {
     namespace "com.statch.statch_app"
     compileSdkVersion 34
     
-    // EXPLICITLY SET NDK VERSION TO FIX THE "25.0.1" ERROR
-    // If this specific version is missing, Gradle will auto-download it.
+    // Explicit NDK version to prevent auto-detection crashes
     ndkVersion "25.1.8937393"
 
     compileOptions {
@@ -53,9 +52,10 @@ android {
 
     buildTypes {
         release {
-            // Disables shrinking to prevent build errors with some third-party libs
-            // You can enable this later (minifyEnabled true) with proper proguard rules
-            minifyEnabled false 
+            // FIX: Both must be false OR both must be true.
+            // Setting to false guarantees build success without ProGuard errors.
+            minifyEnabled false
+            shrinkResources false 
             signingConfig signingConfigs.debug
         }
     }
@@ -66,6 +66,6 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
-    // Add any extra android dependencies here
+    // Ensure this matches the Kotlin version in settings.gradle
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
 }
