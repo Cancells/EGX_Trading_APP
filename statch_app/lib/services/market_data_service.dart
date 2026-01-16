@@ -112,8 +112,8 @@ class MarketDataService {
       lastUpdated: now,
     );
     
-    // Stocks
-    final stocks = _stockData.entries.map((entry) {
+    // Stocks - Explicitly typed List<Stock>
+    final List<Stock> stocks = _stockData.entries.map((entry) {
       final basePrice = entry.value['basePrice'] as double;
       final history = _generatePriceHistory(basePrice, 50, 0.005);
       final currentPrice = history.last;

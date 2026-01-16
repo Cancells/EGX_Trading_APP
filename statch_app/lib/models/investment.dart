@@ -22,6 +22,10 @@ class Investment {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
+  // Aliases for compatibility with other parts of the app
+  double get shares => quantity;
+  double get averagePrice => purchasePrice;
+
   /// Calculate total invested amount
   double get totalInvested => purchasePrice * quantity;
 

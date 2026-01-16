@@ -24,10 +24,10 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.statch.statch_app"
-    compileSdkVersion 34
+    compileSdk 36
     
     // Explicit NDK version to prevent auto-detection crashes
-    ndkVersion "25.1.8937393"
+    ndkVersion "27.0.12077973"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -45,18 +45,24 @@ android {
     defaultConfig {
         applicationId "com.statch.statch_app"
         minSdkVersion flutter.minSdkVersion
-        targetSdkVersion 34
+        targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            // FIX: Both must be false OR both must be true.
-            // Setting to false guarantees build success without ProGuard errors.
-            minifyEnabled false
-            shrinkResources false 
-            signingConfig signingConfigs.debug
+            // SECURITY FIX: Enabled code obfuscation and resource shrinking.
+            // This prevents reverse engineering of your API logic.
+            minifyEnabled true
+            shrinkResources true
+            
+            // SECURITY FIX: Removed debug signing config.
+            // Do NOT use 'signingConfigs.debug' for release builds.
+            // You must configure a proper upload keystore in a separate file.
+            // signingConfig signingConfigs.debug 
+            
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

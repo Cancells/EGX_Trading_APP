@@ -21,6 +21,8 @@ dependencies:
   image_picker: ^1.0.7
   path_provider: ^2.1.2
   crypto: ^3.0.3
+  # Added for data encryption
+  encrypt: ^5.0.3
   cached_network_image: ^3.3.1
   flutter_cache_manager: ^3.3.1
   flutter_animate: ^4.5.0

@@ -3,6 +3,21 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+// Define Currency enum required by settings
+enum Currency {
+  egp('EGP', 'Egyptian Pound', 'E£'),
+  usd('USD', 'US Dollar', '\$'),
+  eur('EUR', 'Euro', '€'),
+  sar('SAR', 'Saudi Riyal', 'SR'),
+  aed('AED', 'UAE Dirham', 'DH');
+
+  final String code;
+  final String name;
+  final String symbol;
+  
+  const Currency(this.code, this.name, this.symbol);
+}
+
 class CurrencyService extends ChangeNotifier {
   // Default fallback if internet is down (Safe estimate)
   double _usdToEgp = 50.60; 
@@ -10,6 +25,13 @@ class CurrencyService extends ChangeNotifier {
   
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  // Add properties required by settings screen
+  Currency _baseCurrency = Currency.egp;
+  Currency get baseCurrency => _baseCurrency;
+  
+  DateTime? _lastUpdate;
+  DateTime? get lastUpdate => _lastUpdate;
 
   // Singleton approach so we can access it anywhere easily
   static final CurrencyService _instance = CurrencyService._internal();
@@ -20,6 +42,14 @@ class CurrencyService extends ChangeNotifier {
   Future<void> init() async {
     await fetchRates();
   }
+
+  void setBaseCurrency(Currency currency) {
+    _baseCurrency = currency;
+    notifyListeners();
+  }
+
+  // Alias for fetchRates to match usage in settings_screen
+  Future<void> fetchExchangeRates() => fetchRates();
 
   Future<void> fetchRates() async {
     _isLoading = true;
@@ -38,6 +68,7 @@ class CurrencyService extends ChangeNotifier {
         // Basic sanity check to prevent bad data crashing math
         if (rate > 10) { 
           _usdToEgp = rate;
+          _lastUpdate = DateTime.now();
           debugPrint('✅ Updated USD/EGP Rate: $_usdToEgp');
         }
       }

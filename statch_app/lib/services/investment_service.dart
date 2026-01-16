@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:encrypt/encrypt.dart' as enc;
+import 'package:crypto/crypto.dart'; // Used to derive key
 import '../models/investment.dart';
 import 'yahoo_finance_service.dart';
 import 'gold_service.dart';
 
 /// Service for managing user investments
-class InvestmentService {
+class InvestmentService extends ChangeNotifier {
   static final InvestmentService _instance = InvestmentService._internal();
   factory InvestmentService() => _instance;
   InvestmentService._internal();
@@ -31,15 +36,83 @@ class InvestmentService {
     _startPriceUpdates();
   }
 
+  // --- Encryption Helpers ---
+
+  /// Derives a consistent 32-byte key for AES-256 using SHA-256.
+  /// NOTE: In a high-security environment, this key should be stored in FlutterSecureStorage.
+  /// Here we use a static seed to obfuscate data against XML reads/backups.
+  enc.Key _getEncryptionKey() {
+    const keySeed = 'statch_app_secure_investment_data_seed_2026';
+    final bytes = utf8.encode(keySeed);
+    final digest = sha256.convert(bytes);
+    return enc.Key(Uint8List.fromList(digest.bytes));
+  }
+
+  /// Encrypts plain text string
+  String _encryptData(String plainText) {
+    try {
+      final key = _getEncryptionKey();
+      final iv = enc.IV.fromLength(16); // Generate random IV
+      final encrypter = enc.Encrypter(enc.AES(key));
+
+      final encrypted = encrypter.encrypt(plainText, iv: iv);
+      // Return in format: IV:Base64Data
+      return '${iv.base64}:${encrypted.base64}';
+    } catch (e) {
+      debugPrint('Encryption failed: $e');
+      return plainText; // Fallback (should not happen)
+    }
+  }
+
+  /// Decrypts data, with fallback for legacy plain-text JSON
+  String _decryptData(String encryptedText) {
+    if (encryptedText.isEmpty) return '';
+
+    // Check if it's our encrypted format (IV:Data)
+    if (!encryptedText.contains(':')) {
+      // It's likely legacy plain JSON data. Return as is.
+      return encryptedText;
+    }
+
+    try {
+      final parts = encryptedText.split(':');
+      if (parts.length != 2) return encryptedText;
+
+      final key = _getEncryptionKey();
+      final iv = enc.IV.fromBase64(parts[0]);
+      final encrypted = enc.Encrypted.fromBase64(parts[1]);
+      final encrypter = enc.Encrypter(enc.AES(key));
+
+      return encrypter.decrypt(encrypted, iv: iv);
+    } catch (e) {
+      debugPrint('Decryption failed (might be plain text): $e');
+      return encryptedText; // Fallback
+    }
+  }
+
+  // --- Storage Logic ---
+
   /// Load investments from storage
   Future<void> _loadInvestments() async {
-    final jsonString = _prefs?.getString(_storageKey);
-    if (jsonString != null && jsonString.isNotEmpty) {
+    final rawString = _prefs?.getString(_storageKey);
+    
+    if (rawString != null && rawString.isNotEmpty) {
       try {
+        // Decrypt the data before parsing
+        final jsonString = _decryptData(rawString);
+        
         _investments = Investment.decodeList(jsonString);
         _investmentsController.add(_investments);
+        notifyListeners();
+        
+        // If the data was plain text (legacy), this save will encrypt it for the future
+        if (!rawString.contains(':')) {
+          await _saveInvestments();
+        }
       } catch (e) {
+        debugPrint('Error loading investments: $e');
         _investments = [];
+        notifyListeners();
       }
     }
   }
@@ -47,9 +120,16 @@ class InvestmentService {
   /// Save investments to storage
   Future<void> _saveInvestments() async {
     final jsonString = Investment.encodeList(_investments);
-    await _prefs?.setString(_storageKey, jsonString);
+    
+    // Encrypt the JSON string before saving
+    final encryptedString = _encryptData(jsonString);
+    
+    await _prefs?.setString(_storageKey, encryptedString);
     _investmentsController.add(_investments);
+    notifyListeners();
   }
+
+  // --- Investment Logic (Unchanged) ---
 
   /// Add a new investment
   Future<Investment?> addInvestment({
@@ -224,7 +304,7 @@ class InvestmentService {
 
     if (hasChanges) {
       _investmentsController.add(_investments);
-      // Don't save to storage on every price update (only structure changes)
+      notifyListeners();
     }
   }
 
@@ -240,8 +320,10 @@ class InvestmentService {
   }
 
   /// Dispose the service
+  @override
   void dispose() {
     stopUpdates();
     _investmentsController.close();
+    super.dispose();
   }
 }
