@@ -31,16 +31,16 @@ extension ThemeSettingExtension on ThemeSetting {
 }
 
 class AppTheme {
-  // --- Brand Colors ---
+  // Brand Colors
   static const Color robinhoodGreen = Color(0xFF00C805);
   static const Color robinhoodRed = Color(0xFFFF5000);
-  static const Color goldPrimary = Color(0xFFFFD700); // Added for Gold
+  static const Color goldPrimary = Color(0xFFFFD700); 
   
-  // --- Chart Colors ---
+  // Chart Colors
   static const Color chartGreen = Color(0xFF00C805);
   static const Color chartRed = Color(0xFFFF5000);
   
-  // --- Backgrounds & Surfaces ---
+  // Backgrounds & Surfaces
   static const Color lightBackground = Color(0xFFFAFAFA);
   static const Color darkBackground = Color(0xFF000000);
   
@@ -50,7 +50,7 @@ class AppTheme {
   static const Color lightSurface = Colors.white;
   static const Color darkSurface = Color(0xFF121212);
   
-  // --- Text Colors ---
+  // Text
   static const Color lightText = Color(0xFF1F2937);
   static const Color darkText = Color(0xFFF3F4F6);
   static const Color mutedText = Color(0xFF6B7280);

@@ -3,32 +3,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:provider/provider.dart';
+
+// Services
 import 'services/preferences_service.dart';
 import 'services/investment_service.dart';
 import 'services/pin_service.dart';
 import 'services/currency_service.dart';
 import 'services/market_data_service.dart'; 
 import 'repositories/market_repository.dart';
+
+// Theme & UI
 import 'theme/dynamic_theme.dart';
 import 'widgets/error_overlay.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/security_gate_screen.dart';
 import 'screens/app_loading_screen.dart';
 import 'screens/dashboard_screen.dart';
-// Added missing import
 import 'models/market_data.dart'; 
 
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     
-    // Initialize Services
-    await PreferencesService().init();
-    await InvestmentService().init();
-    await PinService().init();
+    // 1. Initialize Singletons/Services
+    final prefsService = PreferencesService();
+    await prefsService.init();
+
+    final investmentService = InvestmentService();
+    await investmentService.init();
+
+    final pinService = PinService();
+    await pinService.init();
     
-    // Initialize Static Data from JSON
-    await EgyptianStocks.init(); 
+    // 2. Load Static Data
+    try {
+      await EgyptianStocks.init(); 
+    } catch (e) {
+      debugPrint("Error initializing stocks: $e");
+    }
     
     final currencyService = CurrencyService();
     currencyService.init();
@@ -42,17 +54,19 @@ void main() {
     runApp(
       MultiProvider(
         providers: [
+          ChangeNotifierProvider.value(value: prefsService), 
+          Provider.value(value: pinService),   
           ChangeNotifierProvider.value(value: themeProvider),
           ChangeNotifierProvider.value(value: currencyService),
+          ChangeNotifierProvider.value(value: investmentService),
           Provider(create: (_) => MarketDataService()),
           Provider.value(value: marketRepo), 
-          ChangeNotifierProvider.value(value: InvestmentService()),
         ],
         child: const StatchApp(),
       ),
     );
   }, (error, stackTrace) {
-    debugPrint('ERROR: $error');
+    debugPrint('CRITICAL APP ERROR: $error');
   });
 }
 
@@ -64,19 +78,24 @@ class StatchApp extends StatefulWidget {
 }
 
 class _StatchAppState extends State<StatchApp> {
-  final PreferencesService _prefsService = PreferencesService();
-  AppState _appState = AppState.loading;
+  final PreferencesService _prefsService = PreferencesService(); 
+  
+  // Start with a neutral state, NOT loading, to prevent flicker
+  AppState _appState = AppState.loading; 
 
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _decideInitialScreen();
   }
 
-  Future<void> _initializeApp() async {
+  Future<void> _decideInitialScreen() async {
+    // Ensure prefs are fully ready
     if (!_prefsService.hasSeenWelcome) {
+      // If user hasn't seen welcome, FORCE welcome state
       setState(() => _appState = AppState.welcome);
     } else {
+      // Otherwise, go to normal loading (which handles PIN check)
       setState(() => _appState = AppState.loading);
     }
   }
@@ -124,10 +143,13 @@ class _StatchAppState extends State<StatchApp> {
           onSecurityRequired: _onSecurityRequired,
         );
       case AppState.welcome:
-        return WelcomeScreen(onGetStarted: () async {
+        return WelcomeScreen(
+          onGetStarted: () async {
+            // User explicitly clicked "Get Started"
             await _prefsService.setHasSeenWelcome(true);
             setState(() => _appState = AppState.loading);
-        });
+          },
+        );
       case AppState.securityGate:
         return SecurityGateScreen(onAuthenticated: _onAuthenticated);
       case AppState.authenticated:

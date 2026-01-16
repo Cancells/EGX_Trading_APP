@@ -9,6 +9,8 @@ import '../widgets/modern_stock_card.dart';
 import '../widgets/market_switcher.dart';
 import 'add_investment_screen.dart';
 import 'stock_detail_screen.dart';
+import 'settings_screen.dart'; // Ensure you have this import
+import 'profile_screen.dart'; // Ensure you have this import
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -24,48 +26,118 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final prefs = Provider.of<PreferencesService>(context);
     final currencyService = Provider.of<CurrencyService>(context);
 
-    // Filter logic can be added here based on MarketSwitcher if needed
     final investments = investmentService.investments;
-    
-    // Simulate loading if list is empty but we expect data (simplified)
-    // In a real app, InvestmentService would have an 'isLoading' flag
-    final bool isLoading = investments.isEmpty && investmentService.investmentsStream == null;
+    final bool isEmpty = investments.isEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () async {
-          HapticFeedback.mediumImpact(); // Haptic Feedback
+          HapticFeedback.mediumImpact();
           await currencyService.fetchExchangeRates();
           await investmentService.refreshPrices();
         },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
+            // 1. HEADER (Profile & Settings) - FIXED
+            SliverAppBar(
+              floating: true,
+              pinned: false,
+              snap: true,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              elevation: 0,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: IconButton(
+                  icon: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    child: Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                  ),
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                  },
+                ),
+              ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getGreeting(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                  Text(
+                    prefs.userName.isNotEmpty ? prefs.userName : 'Investor',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                  },
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+
+            // 2. Portfolio Card
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(top: 16, bottom: 8),
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
                 child: PortfolioSummaryCard(
                   summary: investmentService.portfolioSummary,
                 ),
               ),
             ),
+
+            // 3. Market Switcher
             const SliverToBoxAdapter(
-              child: MarketSwitcher(),
+              child: MarketSwitcher(selectedIndex: 0),
             ),
-            const SliverPadding(padding: EdgeInsets.symmetric(vertical: 8)),
+            
+            const SliverPadding(padding: EdgeInsets.symmetric(vertical: 12)),
+
+            // 4. Investment List
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    if (isLoading) {
-                      // Show 3 skeleton loaders
-                      if (index < 3) {
-                        return const ModernStockCard(investment: null);
+                    if (isEmpty) {
+                      if (index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.add_chart, size: 48, color: Colors.grey.withOpacity(0.5)),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "No assets yet",
+                                  style: TextStyle(color: Colors.grey.withOpacity(0.8)),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const AddInvestmentScreen()),
+                                  ),
+                                  child: const Text("Add your first investment"),
+                                )
+                              ],
+                            ),
+                          ),
+                        );
                       }
                       return null;
                     }
-                    
+
                     if (index >= investments.length) return null;
                     
                     final investment = investments[index];
@@ -80,11 +152,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     );
                   },
-                  childCount: isLoading ? 3 : investments.length,
+                  childCount: isEmpty ? 1 : investments.length,
                 ),
               ),
             ),
-            // Bottom padding for FAB
+            
             const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
           ],
         ),
@@ -101,5 +173,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon: const Icon(Icons.add),
       ),
     );
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning,';
+    if (hour < 17) return 'Good Afternoon,';
+    return 'Good Evening,';
   }
 }

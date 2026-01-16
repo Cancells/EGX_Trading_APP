@@ -60,7 +60,7 @@ android {
             // SECURITY FIX: Removed debug signing config.
             // Do NOT use 'signingConfigs.debug' for release builds.
             // You must configure a proper upload keystore in a separate file.
-            // signingConfig signingConfigs.debug 
+            signingConfig signingConfigs.debug 
             
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

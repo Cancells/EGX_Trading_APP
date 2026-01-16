@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'market_data_service.dart';
 import 'yahoo_finance_service.dart';
-import '../models/market_data.dart';
 
 class GoldService {
   static final GoldService _instance = GoldService._internal();
@@ -10,20 +8,14 @@ class GoldService {
   GoldService._internal();
 
   final YahooFinanceService _yahooService = YahooFinanceService();
-  final MarketDataService _marketDataService = MarketDataService();
 
   double _goldSpotUsd = 0.0;
-  double _previousGoldSpotUsd = 0.0;
-  
   double _usdToEgp = 50.60;
-  double _previousUsdToEgp = 50.60;
 
-  DateTime? _lastUpdate;
-
+  static const double _ounceToGram = 31.1035;
   static const double _karat24 = 1.0;
   static const double _karat21 = 0.875;
   static const double _karat18 = 0.750;
-  static const double _ounceToGram = 31.1035;
 
   Future<void> init() async {
     await fetchGoldPrices();
@@ -39,21 +31,9 @@ class GoldService {
       final goldQuote = futures[0];
       final egpQuote = futures[1];
 
-      if (goldQuote != null) {
-        final price = goldQuote.price;
-        final prev = goldQuote.previousClose ?? price;
-        _previousGoldSpotUsd = _goldSpotUsd > 0 ? _goldSpotUsd : prev;
-        _goldSpotUsd = price;
-      }
+      if (goldQuote != null) _goldSpotUsd = goldQuote.price;
+      if (egpQuote != null) _usdToEgp = egpQuote.price;
 
-      if (egpQuote != null) {
-        final price = egpQuote.price;
-        final prev = egpQuote.previousClose ?? price;
-        _previousUsdToEgp = _usdToEgp > 0 ? _usdToEgp : prev;
-        _usdToEgp = price;
-      }
-
-      _lastUpdate = DateTime.now();
     } catch (e) {
       debugPrint('Error fetching gold prices: $e');
     }

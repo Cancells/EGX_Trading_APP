@@ -8,6 +8,7 @@ import 'package:crypto/crypto.dart';
 import '../models/investment.dart';
 import 'yahoo_finance_service.dart';
 import 'gold_service.dart';
+import '../models/market_data.dart';
 
 class InvestmentService extends ChangeNotifier {
   static final InvestmentService _instance = InvestmentService._internal();
@@ -34,7 +35,7 @@ class InvestmentService extends ChangeNotifier {
     _startPriceUpdates();
   }
 
-  // --- Encryption (Kept same) ---
+  // --- Encryption ---
   enc.Key _getEncryptionKey() {
     const keySeed = 'statch_app_secure_investment_data_seed_2026';
     final bytes = utf8.encode(keySeed);
@@ -50,7 +51,6 @@ class InvestmentService extends ChangeNotifier {
       final encrypted = encrypter.encrypt(plainText, iv: iv);
       return '${iv.base64}:${encrypted.base64}';
     } catch (e) {
-      debugPrint('Encryption failed: $e');
       return plainText;
     }
   }
@@ -58,19 +58,15 @@ class InvestmentService extends ChangeNotifier {
   String _decryptData(String encryptedText) {
     if (encryptedText.isEmpty) return '';
     if (!encryptedText.contains(':')) return encryptedText;
-
     try {
       final parts = encryptedText.split(':');
       if (parts.length != 2) return encryptedText;
-
       final key = _getEncryptionKey();
       final iv = enc.IV.fromBase64(parts[0]);
       final encrypted = enc.Encrypted.fromBase64(parts[1]);
       final encrypter = enc.Encrypter(enc.AES(key));
-
       return encrypter.decrypt(encrypted, iv: iv);
     } catch (e) {
-      debugPrint('Decryption failed: $e');
       return encryptedText;
     }
   }
@@ -100,6 +96,8 @@ class InvestmentService extends ChangeNotifier {
   }
 
   // --- Actions ---
+  
+  /// Add investment with auto-fetched price
   Future<Investment?> addInvestment({
     required String symbol,
     required String name,
@@ -107,11 +105,9 @@ class InvestmentService extends ChangeNotifier {
     required DateTime purchaseDate,
   }) async {
     double? purchasePrice = await _yahooService.fetchPriceAtDate(symbol, purchaseDate);
-    
-    // Fetch CURRENT stock data to fallback or get current price
     final stock = await _yahooService.fetchQuote(symbol);
     
-    if (purchasePrice == null) {
+    if (purchasePrice == null || purchasePrice == 0) {
       purchasePrice = stock?.price;
     }
 
@@ -134,6 +130,7 @@ class InvestmentService extends ChangeNotifier {
     return investment;
   }
 
+  /// Add investment with manual price (Fix for AddInvestmentScreen error)
   Future<Investment?> addInvestmentWithPrice({
     required String symbol,
     required String name,
@@ -141,14 +138,12 @@ class InvestmentService extends ChangeNotifier {
     required DateTime purchaseDate,
     required double purchasePrice,
   }) async {
-    double currentPrice = purchasePrice;
+    // Attempt to get current live price
+    final stock = await _yahooService.fetchQuote(symbol);
     
-    if (GoldService.isGoldSymbol(symbol)) {
-      currentPrice = _goldService.getPriceBySymbol(symbol) ?? purchasePrice;
-    } else {
-      final stock = await _yahooService.fetchQuote(symbol);
-      currentPrice = stock?.price ?? purchasePrice;
-    }
+    // If live price fails, fallback to purchase price to avoid 0.0 value
+    double currentPrice = stock?.price ?? purchasePrice;
+    if (currentPrice == 0) currentPrice = purchasePrice;
 
     final investment = Investment(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -173,7 +168,11 @@ class InvestmentService extends ChangeNotifier {
     required double purchasePrice,
     double? currentPrice,
   }) async {
-    final goldCurrentPrice = currentPrice ?? _goldService.getPriceBySymbol(symbol) ?? purchasePrice;
+    double? fetchedPrice = await _yahooService.fetchPriceAtDate(symbol, purchaseDate);
+    final histPrice = fetchedPrice ?? purchasePrice;
+    
+    final stock = await _yahooService.fetchQuote(symbol);
+    final livePrice = stock?.price ?? histPrice;
 
     final investment = Investment(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -181,8 +180,8 @@ class InvestmentService extends ChangeNotifier {
       name: name,
       quantity: quantity,
       purchaseDate: purchaseDate,
-      purchasePrice: purchasePrice,
-      currentPrice: goldCurrentPrice,
+      purchasePrice: histPrice,
+      currentPrice: livePrice,
     );
 
     _investments.add(investment);
@@ -217,30 +216,17 @@ class InvestmentService extends ChangeNotifier {
 
   Future<void> _updateAllPrices() async {
     if (_investments.isEmpty) return;
-
     bool hasChanges = false;
-    final regularSymbols = <String>{};
     
-    for (final inv in _investments) {
-      if (!GoldService.isGoldSymbol(inv.symbol)) {
-        regularSymbols.add(inv.symbol);
-      }
-    }
-    
-    final quotes = await _yahooService.fetchMultipleQuotes(regularSymbols.toList());
+    final symbols = _investments.map((e) => e.symbol).toSet().toList();
+    final quotes = await _yahooService.fetchMultipleQuotes(symbols);
 
     for (int i = 0; i < _investments.length; i++) {
       final symbol = _investments[i].symbol;
-      double? newPrice;
+      final stock = quotes[symbol];
       
-      if (GoldService.isGoldSymbol(symbol)) {
-        newPrice = _goldService.getPriceBySymbol(symbol);
-      } else {
-        newPrice = quotes[symbol]?.price;
-      }
-      
-      if (newPrice != null && newPrice != 0 && newPrice != _investments[i].currentPrice) {
-        _investments[i] = _investments[i].copyWith(currentPrice: newPrice);
+      if (stock != null && stock.price != 0 && stock.price != _investments[i].currentPrice) {
+        _investments[i] = _investments[i].copyWith(currentPrice: stock.price);
         hasChanges = true;
       }
     }
@@ -262,7 +248,7 @@ class InvestmentService extends ChangeNotifier {
 
   @override
   void dispose() {
-    stopUpdates();
+    _updateTimer?.cancel();
     _investmentsController.close();
     super.dispose();
   }

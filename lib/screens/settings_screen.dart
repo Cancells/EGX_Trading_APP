@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart'; // Added back
+import 'package:url_launcher/url_launcher.dart';
 import '../services/preferences_service.dart';
 import '../services/pin_service.dart';
 import '../services/currency_service.dart';
 import '../theme/dynamic_theme.dart';
+import '../theme/app_theme.dart'; // REQUIRED IMPORT for ThemeSetting extension
 import 'security_gate_screen.dart';
 import 'profile_screen.dart';
 import 'about_screen.dart';
@@ -36,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     _notificationsEnabled = prefs.notificationsEnabled;
     _priceAlertsEnabled = prefs.priceAlertsEnabled;
-    
     _securityEnabled = _pinService.isPinSet;
     _biometricEnabled = _pinService.isBiometricEnabled;
     
@@ -62,7 +62,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _prefsService.setPriceAlertsEnabled(value);
   }
 
-  // Define empty callback
   static void _emptyCallback() {}
 
   Future<void> _toggleSecurity(bool value) async {
@@ -146,6 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: themeProvider.themeSetting.label, 
             trailing: const Icon(Icons.chevron_right_rounded, size: 20),
             onTap: () {
+              // Simple toggle logic
               if (themeProvider.themeSetting == ThemeSetting.light) {
                 themeProvider.setThemeSetting(ThemeSetting.dark);
               } else {
