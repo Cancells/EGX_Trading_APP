@@ -1,14 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/investment.dart';
-import '../models/market_data.dart';
 import '../services/investment_service.dart';
-import '../repositories/market_repository.dart';
-import '../theme/app_theme.dart';
-import '../widgets/portfolio_composition_chart.dart'; // Import the new chart
 import 'add_investment_screen.dart';
+import 'stock_detail_screen.dart'; // New file
 
 class PortfolioScreen extends StatefulWidget {
   const PortfolioScreen({super.key});
@@ -18,263 +15,315 @@ class PortfolioScreen extends StatefulWidget {
 }
 
 class _PortfolioScreenState extends State<PortfolioScreen> {
+  // 0=Day, 1=Week, 2=Month, 3=YTD
+  int _selectedTimeRange = 0; 
+
   @override
   Widget build(BuildContext context) {
     final investmentService = context.watch<InvestmentService>();
     final investments = investmentService.investments;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    double totalValue = investments.fold(0, (sum, item) => sum + item.currentValue);
+    
+    // Mocking historical gain logic for the selector since we lack real history DB
+    double displayGain = 0;
+    double displayGainPercent = 0;
+    
+    // In a real app, calculate this based on _selectedTimeRange history
+    double totalGainAllTime = investments.fold(0, (sum, item) => sum + item.totalGain);
+    
+    switch (_selectedTimeRange) {
+      case 0: // Daily (simulated 1/30th of total for demo)
+        displayGain = totalGainAllTime * 0.05; 
+        break;
+      case 1: // Weekly
+        displayGain = totalGainAllTime * 0.15;
+        break;
+      case 2: // Monthly
+        displayGain = totalGainAllTime * 0.4;
+        break;
+      case 3: // YTD
+        displayGain = totalGainAllTime;
+        break;
+    }
+    
+    // Avoid division by zero
+    double costBasis = totalValue - totalGainAllTime;
+    displayGainPercent = costBasis == 0 ? 0 : (displayGain / costBasis) * 100;
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      // 4. Settings Icon (Top Left) & 3. Profile Icon (Top Right)
       appBar: AppBar(
-        title: const Text('My Portfolio', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: () { /* Navigate to settings */ },
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddInvestmentScreen()),
-              );
-            },
+            icon: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              child: const Icon(Icons.person_outline, color: Colors.white),
+            ),
+            onPressed: () { /* Navigate to profile */ },
           ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: investments.isEmpty
-          ? _buildEmptyState(context)
-          : StreamBuilder<MarketData>(
-              stream: context.read<MarketRepository>().marketStream,
-              builder: (context, snapshot) {
-                final marketData = snapshot.data;
-                // Calculate total based on what we have (simplified)
-                final totalValue = _calculateTotal(investments, marketData);
-
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Allocation Chart
-                        Text(
-                          'Allocation',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: isDark ? AppTheme.darkCard : Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: PortfolioCompositionChart(
-                            investments: investments,
-                            totalValue: totalValue,
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // 2. Holdings List
-                        Text(
-                          'Holdings',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 16),
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: investments.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final item = investments[index];
-                            // Find real price if available
-                            final livePrice = _getLivePrice(item.symbol, marketData);
-                            return _buildHoldingCard(context, item, livePrice);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-    );
-  }
-
-  Widget _buildHoldingCard(BuildContext context, Investment investment, double currentPrice) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final formatter = NumberFormat.currency(symbol: 'EGP ', decimalDigits: 2);
-    
-    final totalValue = investment.shares * currentPrice;
-    final costBasis = investment.shares * investment.averagePrice;
-    final gainLoss = totalValue - costBasis;
-    final gainLossPercent = (gainLoss / costBasis) * 100;
-    final isPositive = gainLoss >= 0;
-
-    return Dismissible(
-      key: Key(investment.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+      // 5. Floating Action Button (Bottom Left)
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddInvestmentScreen())),
+        label: const Text("Add Asset"),
+        icon: const Icon(Icons.add),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
       ),
-      onDismissed: (_) {
-        HapticFeedback.mediumImpact();
-        context.read<InvestmentService>().removeInvestment(investment.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sold ${investment.symbol}')),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkCard : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Logo / Icon
-            Container(
-              width: 48,
-              height: 48,
+      body: Stack(
+        children: [
+          // Background Gradient
+          Positioned.fill(
+            child: Container(
               decoration: BoxDecoration(
-                color: isDark ? Colors.white10 : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  investment.symbol.substring(0, 1),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark 
+                    ? [const Color(0xFF0F172A), const Color(0xFF000000)] 
+                    : [const Color(0xFFF3F4F6), const Color(0xFFE5E7EB)],
                 ),
               ),
             ),
-            const SizedBox(width: 16),
-            
-            // Symbol & Shares
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    investment.symbol,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          
+          SafeArea(
+            bottom: false,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // 2. Pinned Glass Widget for Gains (Always visible)
+                SliverPersistentHeader(
+                  delegate: _GlassHeaderDelegate(
+                    totalValue: totalValue,
+                    gain: displayGain,
+                    gainPercent: displayGainPercent,
+                    selectedIndex: _selectedTimeRange,
+                    onRangeSelected: (i) => setState(() => _selectedTimeRange = i),
                   ),
-                  Text(
-                    '${investment.shares.toStringAsFixed(0)} shares',
-                    style: const TextStyle(color: AppTheme.mutedText, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Value & Gain/Loss
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  formatter.format(totalValue),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  pinned: true,
                 ),
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: (isPositive ? AppTheme.robinhoodGreen : AppTheme.robinhoodRed).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${isPositive ? '+' : ''}${gainLossPercent.toStringAsFixed(2)}%',
-                    style: TextStyle(
-                      color: isPositive ? AppTheme.robinhoodGreen : AppTheme.robinhoodRed,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+
+                // Holdings List
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final inv = investments[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _GlassStockCard(
+                            investment: inv,
+                            // 6. Navigate to Full Page Detail
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => StockDetailScreen(investment: inv),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      childCount: investments.length,
                     ),
                   ),
                 ),
               ],
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Pinned Glass Header Delegate
+// -----------------------------------------------------------------------------
+class _GlassHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double totalValue;
+  final double gain;
+  final double gainPercent;
+  final int selectedIndex;
+  final ValueChanged<int> onRangeSelected;
+
+  _GlassHeaderDelegate({
+    required this.totalValue,
+    required this.gain,
+    required this.gainPercent,
+    required this.selectedIndex,
+    required this.onRangeSelected,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final isPositive = gain >= 0;
+    
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.7),
+            border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.2))),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text("Total Balance", style: TextStyle(color: Theme.of(context).hintColor)),
+              const SizedBox(height: 4),
+              Text(
+                NumberFormat.currency(symbol: 'EGP ').format(totalValue),
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
+              ),
+              const SizedBox(height: 12),
+              // Range Selector
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: ['1D', '1W', '1M', 'YTD'].asMap().entries.map((e) {
+                    final isSelected = e.key == selectedIndex;
+                    return GestureDetector(
+                      onTap: () => onRangeSelected(e.key),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: isSelected ? [BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
+                        ),
+                        child: Text(
+                          e.value,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? Colors.black : Theme.of(context).hintColor,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Gain Display
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isPositive ? Icons.trending_up : Icons.trending_down,
+                    color: isPositive ? Colors.green : Colors.red,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${isPositive ? '+' : ''}${NumberFormat.currency(symbol: 'EGP ').format(gain)} (${gainPercent.toStringAsFixed(2)}%)',
+                    style: TextStyle(
+                      color: isPositive ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.pie_chart_outline, size: 80, color: AppTheme.mutedText.withOpacity(0.5)),
-          const SizedBox(height: 16),
-          Text(
-            'No investments yet',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.mutedText),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddInvestmentScreen()));
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add your first stock'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.robinhoodGreen,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+  @override
+  double get maxExtent => 220;
+  @override
+  double get minExtent => 220;
+  @override
+  bool shouldRebuild(covariant _GlassHeaderDelegate oldDelegate) => 
+      oldDelegate.selectedIndex != selectedIndex || oldDelegate.totalValue != totalValue;
+}
+
+class _GlassStockCard extends StatelessWidget {
+  final Investment investment;
+  final VoidCallback onTap;
+
+  const _GlassStockCard({required this.investment, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isPositive = investment.totalGain >= 0;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
-          )
-        ],
+            child: Row(
+              children: [
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    investment.symbol.isNotEmpty ? investment.symbol[0] : '?',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(investment.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('${investment.quantity.toStringAsFixed(0)} shares', style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(NumberFormat.compactCurrency(symbol: 'EGP ').format(investment.currentValue), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      '${isPositive ? '+' : ''}${investment.totalGainPercent.toStringAsFixed(2)}%',
+                      style: TextStyle(color: isPositive ? Colors.green : Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
-  }
-
-  double _calculateTotal(List<Investment> investments, MarketData? data) {
-    double total = 0;
-    for (var inv in investments) {
-      final price = _getLivePrice(inv.symbol, data);
-      total += (inv.shares * price);
-    }
-    return total;
-  }
-
-  double _getLivePrice(String symbol, MarketData? data) {
-    if (data == null) return 0.0;
-    // Try to find in live stocks
-    try {
-      final stock = data.stocks.firstWhere((s) => s.symbol == symbol);
-      return stock.price;
-    } catch (_) {
-      // Fallback: This is where you'd query a cache or return last known price
-      // For now, return a dummy multiplier of the investment avg price to simulate movement
-      // In production: Investment model should store 'currentPrice' updated by Repo
-      return 0.0; // Or inv.averagePrice
-    }
   }
 }

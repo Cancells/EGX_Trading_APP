@@ -1,7 +1,6 @@
 name: statch_app
 description: "Statch - Egyptian Market Tracking App"
-publish_to: 'none'
-version: 1.0.0
+version: 1.0.0+1 # Updated to version 1
 
 environment:
   sdk: ^3.5.3
@@ -9,7 +8,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
   fl_chart: ^0.68.0
   shared_preferences: ^2.2.3
   intl: ^0.19.0

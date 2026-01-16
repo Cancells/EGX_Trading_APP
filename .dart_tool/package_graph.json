@@ -5,11 +5,10 @@
   "packages": [
     {
       "name": "statch_app",
-      "version": "1.0.0",
+      "version": "1.0.0+1",
       "dependencies": [
         "cached_network_image",
         "crypto",
-        "cupertino_icons",
         "dynamic_color",
         "encrypt",
         "fl_chart",
@@ -292,11 +291,6 @@
         "equatable",
         "flutter"
       ]
-    },
-    {
-      "name": "cupertino_icons",
-      "version": "1.0.8",
-      "dependencies": []
     },
     {
       "name": "flutter",
