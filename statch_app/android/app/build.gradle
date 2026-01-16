@@ -1,45 +1,71 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
 android {
-    namespace = "com.statch.statch_app"
+    namespace "com.statch.statch_app"
+    compileSdkVersion 34
     
-    // compileSdk 36 required by plugins (backward compatible with older devices)
-    compileSdk = 36 
-    ndkVersion = flutter.ndkVersion
+    // EXPLICITLY SET NDK VERSION TO FIX THE "25.0.1" ERROR
+    // If this specific version is missing, Gradle will auto-download it.
+    ndkVersion "25.1.8937393"
 
     compileOptions {
-        // Upgrading to Java 17 compatibility as required by newer AGP versions
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        // Must match the compileOptions version
-        jvmTarget = "17" 
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
     }
 
     defaultConfig {
-        applicationId = "com.statch.statch_app"
-        
-        // Android 8.0 (Oreo) - API 26 for backward compatibility
-        minSdk = 26
-        targetSdk = 35 
-        
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        applicationId "com.statch.statch_app"
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion 34
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
-            // Recommended: Add R8 shrinking to keep your APK small
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Disables shrinking to prevent build errors with some third-party libs
+            // You can enable this later (minifyEnabled true) with proper proguard rules
+            minifyEnabled false 
+            signingConfig signingConfigs.debug
         }
     }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
+    // Add any extra android dependencies here
 }
