@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:provider/provider.dart';
 import 'services/preferences_service.dart';
@@ -13,7 +14,9 @@ import 'widgets/error_overlay.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/security_gate_screen.dart';
 import 'screens/app_loading_screen.dart';
-import 'screens/dashboard_screen.dart'; // Updated to point to new Dashboard
+import 'screens/dashboard_screen.dart';
+// Added missing import
+import 'models/market_data.dart'; 
 
 void main() {
   runZonedGuarded(() async {
@@ -23,6 +26,9 @@ void main() {
     await PreferencesService().init();
     await InvestmentService().init();
     await PinService().init();
+    
+    // Initialize Static Data from JSON
+    await EgyptianStocks.init(); 
     
     final currencyService = CurrencyService();
     currencyService.init();
@@ -89,7 +95,6 @@ class _StatchAppState extends State<StatchApp> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Dynamic Color Builder listens to system wallpaper
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return Consumer<DynamicThemeProvider>(
@@ -97,14 +102,9 @@ class _StatchAppState extends State<StatchApp> {
             return MaterialApp(
               title: 'Statch',
               debugShowCheckedModeBanner: false,
-              
-              // 2. Themes are generated based on system dynamic colors
               theme: themeProvider.getLightTheme(lightDynamic),
               darkTheme: themeProvider.getDarkTheme(darkDynamic),
-              
-              // 3. Theme Mode (Light/Dark/System) is respected
               themeMode: themeProvider.themeMode,
-              
               builder: (context, child) {
                 return ErrorOverlay(child: child ?? const SizedBox.shrink());
               },
@@ -131,7 +131,6 @@ class _StatchAppState extends State<StatchApp> {
       case AppState.securityGate:
         return SecurityGateScreen(onAuthenticated: _onAuthenticated);
       case AppState.authenticated:
-        // Pointing to your new DashboardScreen with glassmorphism
         return const DashboardScreen(); 
     }
   }

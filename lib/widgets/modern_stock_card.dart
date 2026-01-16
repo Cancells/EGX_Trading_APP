@@ -83,9 +83,8 @@ class ModernStockCard extends StatelessWidget {
                   SizedBox(
                     width: 60,
                     height: 30,
-                    // Ensure MiniChart accepts these params
                     child: MiniChart(
-                      data: const [10, 15, 13, 20, 18, 25, 22], 
+                      data: const [10, 15, 13, 20, 18, 25, 22],
                       color: isPositive ? AppTheme.robinhoodGreen : AppTheme.robinhoodRed,
                     ),
                   ),
@@ -132,9 +131,8 @@ class ModernStockCard extends StatelessWidget {
   }
 
   Widget _buildShimmerLoading(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+    final baseColor = Theme.of(context).brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[100]!;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -142,43 +140,10 @@ class ModernStockCard extends StatelessWidget {
         baseColor: baseColor,
         highlightColor: highlightColor,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          height: 80,
           decoration: BoxDecoration(
             color: baseColor.withOpacity(0.3),
             borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(width: 60, height: 16, color: Colors.white),
-                    const SizedBox(height: 8),
-                    Container(width: 40, height: 12, color: Colors.white),
-                  ],
-                ),
-              ),
-              Container(width: 50, height: 30, color: Colors.white),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(width: 80, height: 16, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Container(width: 50, height: 12, color: Colors.white),
-                ],
-              ),
-            ],
           ),
         ),
       ),

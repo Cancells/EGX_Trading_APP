@@ -54,16 +54,8 @@ class DynamicThemeProvider extends ChangeNotifier {
       colorScheme: scheme,
       scaffoldBackgroundColor: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       
-      cardTheme: CardTheme(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
-          ),
-        ),
-      ),
+      // Removed manual CardTheme configuration to avoid version conflicts. 
+      // Material 3 handles card styling automatically.
       
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,

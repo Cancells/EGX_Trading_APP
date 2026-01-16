@@ -4,11 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/market_data.dart';
 
-// Helper for caching
-class _CachedData {
-  final MarketData data;
+// Helper for caching stocks
+class _CachedStock {
+  final Stock data;
   final DateTime timestamp;
-  _CachedData(this.data, this.timestamp);
+  _CachedStock(this.data, this.timestamp);
 }
 
 class YahooFinanceService {
@@ -16,15 +16,16 @@ class YahooFinanceService {
   factory YahooFinanceService() => _instance;
   YahooFinanceService._internal();
 
-  final Map<String, _CachedData> _cache = {};
+  final Map<String, _CachedStock> _cache = {};
   static const Duration _cacheDuration = Duration(minutes: 1);
 
   static const Map<String, String> _headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
   };
 
-  /// Main Fetch Method (Cached)
-  Future<MarketData?> fetchQuote(String symbol) async {
+  /// Fetches a single Stock quote.
+  /// Returns Stock? (from user model)
+  Future<Stock?> fetchQuote(String symbol) async {
     // Check Cache
     if (_cache.containsKey(symbol)) {
       final cached = _cache[symbol]!;
@@ -42,29 +43,28 @@ class YahooFinanceService {
         final result = json['chart']['result'][0];
         final meta = result['meta'];
         
+        // Safely parse nullable values
         final price = (meta['regularMarketPrice'] as num?)?.toDouble() ?? 0.0;
         final prevClose = (meta['chartPreviousClose'] as num?)?.toDouble();
-        final change = price - (prevClose ?? price);
-        final changePercent = (prevClose != null && prevClose != 0) ? (change / prevClose) * 100 : 0.0;
+        
+        // Calculate change safely
+        final safePrev = prevClose ?? price;
+        final change = price - safePrev;
+        final changePercent = (safePrev != 0) ? (change / safePrev) * 100 : 0.0;
 
-        // Use the constructor that matches the updated MarketData class
-        final marketData = MarketData(
-          egx30: MarketIndex(name: '', symbol: '', value: 0, change: 0, changePercent: 0, priceHistory: [], lastUpdated: DateTime.now()),
-          gold24k: GoldPrice(karat: '', pricePerGram: 0, change: 0, changePercent: 0, lastUpdated: DateTime.now()),
-          gold21k: GoldPrice(karat: '', pricePerGram: 0, change: 0, changePercent: 0, lastUpdated: DateTime.now()),
-          stocks: [],
-          lastUpdated: DateTime.now(),
-          // Compatibility Fields
+        final stock = Stock(
           symbol: symbol,
+          name: symbol, // Placeholder as Yahoo chart API doesn't always give full name
           price: price,
           change: change,
           changePercent: changePercent,
-          volume: 0,
+          priceHistory: [], // Placeholder
+          lastUpdated: DateTime.now(),
           previousClose: prevClose,
         );
 
-        _cache[symbol] = _CachedData(marketData, DateTime.now());
-        return marketData;
+        _cache[symbol] = _CachedStock(stock, DateTime.now());
+        return stock;
       }
     } catch (e) {
       debugPrint('Error fetching quote for $symbol: $e');
@@ -74,21 +74,21 @@ class YahooFinanceService {
 
   /// New: Fetch Full Quote for Detail Screen
   Future<QuoteData?> fetchFullQuote(String symbol) async {
-    final md = await fetchQuote(symbol);
-    if (md == null) return null;
+    final stock = await fetchQuote(symbol);
+    if (stock == null) return null;
     
-    // Fix: Handle nulls safely
-    final price = md.price ?? 0.0;
-    final prevClose = md.previousClose ?? price;
+    final price = stock.price;
+    // Safely handle null previousClose via the getter or logic
+    final prevClose = stock.previousClose ?? price;
 
     return QuoteData(
       price: price,
-      change: md.change ?? 0.0,
-      changePercent: md.changePercent ?? 0.0,
+      change: stock.change,
+      changePercent: stock.changePercent,
       dayHigh: price * 1.01,
       dayLow: price * 0.99,
       open: prevClose,
-      volume: md.volume ?? 0.0,
+      volume: 0,
       marketCap: 0,
       previousClose: prevClose,
     );
@@ -131,8 +131,9 @@ class YahooFinanceService {
     return null;
   }
 
-  Future<Map<String, MarketData>> fetchMultipleQuotes(List<String> symbols) async {
-    final Map<String, MarketData> results = {};
+  /// Batch Fetch
+  Future<Map<String, Stock>> fetchMultipleQuotes(List<String> symbols) async {
+    final Map<String, Stock> results = {};
     for (final sym in symbols) {
       final data = await fetchQuote(sym);
       if (data != null) {

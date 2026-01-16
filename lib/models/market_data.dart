@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
-// --- Core Market Data Models (From your provided code) ---
+// --- Core Market Data Models ---
 
 class MarketIndex {
   final String name;
@@ -185,6 +186,7 @@ class Stock {
   final String currencySymbol;
   final int decimals;
   final String? marketType; 
+  final double? previousClose;
 
   Stock({
     required this.symbol,
@@ -200,6 +202,7 @@ class Stock {
     this.currencySymbol = 'EGP',
     this.decimals = 2,
     this.marketType,
+    this.previousClose,
   });
 
   bool get isPositive => change >= 0;
@@ -234,6 +237,7 @@ class Stock {
     String? currencySymbol,
     int? decimals,
     String? marketType,
+    double? previousClose,
   }) {
     return Stock(
       symbol: symbol ?? this.symbol,
@@ -249,6 +253,7 @@ class Stock {
       currencySymbol: currencySymbol ?? this.currencySymbol,
       decimals: decimals ?? this.decimals,
       marketType: marketType ?? this.marketType,
+      previousClose: previousClose ?? this.previousClose,
     );
   }
 
@@ -266,6 +271,7 @@ class Stock {
     'currencySymbol': currencySymbol,
     'decimals': decimals,
     'marketType': marketType,
+    'previousClose': previousClose,
   };
 
   factory Stock.fromJson(Map<String, dynamic> json) {
@@ -283,6 +289,7 @@ class Stock {
       currencySymbol: json['currencySymbol'] ?? 'EGP',
       decimals: json['decimals'] ?? 2,
       marketType: json['marketType'],
+      previousClose: (json['previousClose'] as num?)?.toDouble(),
     );
   }
 }
@@ -296,13 +303,6 @@ class MarketData {
   final GoldPrice? silver; 
   final List<Stock> stocks;
   final DateTime lastUpdated;
-  // --- Compatibility Fields for Detail Screens ---
-  final String? symbol;
-  final double? price;
-  final double? change;
-  final double? changePercent;
-  final double? volume;
-  final double? previousClose;
 
   MarketData({
     required this.egx30,
@@ -313,13 +313,6 @@ class MarketData {
     this.silver,
     required this.stocks,
     required this.lastUpdated,
-    // Optional params for compatibility
-    this.symbol,
-    this.price,
-    this.change,
-    this.changePercent,
-    this.volume,
-    this.previousClose,
   });
 
   Map<String, dynamic> toJson() => {
@@ -334,41 +327,20 @@ class MarketData {
   };
 
   factory MarketData.fromJson(Map<String, dynamic> json) {
-    // If it's a full market object
-    if (json.containsKey('egx30')) {
-      return MarketData(
-        egx30: MarketIndex.fromJson(json['egx30']),
-        gold24k: GoldPrice.fromJson(json['gold24k']),
-        gold21k: GoldPrice.fromJson(json['gold21k']),
-        gold18k: json['gold18k'] != null ? GoldPrice.fromJson(json['gold18k']) : null,
-        goldPound: json['goldPound'] != null ? GoldPoundPriceData.fromJson(json['goldPound']) : null,
-        silver: json['silver'] != null ? GoldPrice.fromJson(json['silver']) : null,
-        stocks: (json['stocks'] as List).map((e) => Stock.fromJson(e)).toList(),
-        lastUpdated: DateTime.parse(json['lastUpdated']),
-      );
-    }
-    // If it's a single stock fetch (compatibility mode)
-    else {
-      return MarketData(
-        // Create dummy data for required fields
-        egx30: MarketIndex(name: '', symbol: '', value: 0, change: 0, changePercent: 0, priceHistory: [], lastUpdated: DateTime.now()),
-        gold24k: GoldPrice(karat: '', pricePerGram: 0, change: 0, changePercent: 0, lastUpdated: DateTime.now()),
-        gold21k: GoldPrice(karat: '', pricePerGram: 0, change: 0, changePercent: 0, lastUpdated: DateTime.now()),
-        stocks: [],
-        lastUpdated: DateTime.now(),
-        // Populate actual fields
-        symbol: json['symbol'] ?? '',
-        price: (json['price'] as num?)?.toDouble() ?? 0.0,
-        change: (json['change'] as num?)?.toDouble() ?? 0.0,
-        changePercent: (json['changePercent'] as num?)?.toDouble() ?? 0.0,
-        volume: (json['volume'] as num?)?.toDouble() ?? 0.0,
-        previousClose: (json['previousClose'] as num?)?.toDouble(),
-      );
-    }
+    return MarketData(
+      egx30: MarketIndex.fromJson(json['egx30']),
+      gold24k: GoldPrice.fromJson(json['gold24k']),
+      gold21k: GoldPrice.fromJson(json['gold21k']),
+      gold18k: json['gold18k'] != null ? GoldPrice.fromJson(json['gold18k']) : null,
+      goldPound: json['goldPound'] != null ? GoldPoundPriceData.fromJson(json['goldPound']) : null,
+      silver: json['silver'] != null ? GoldPrice.fromJson(json['silver']) : null,
+      stocks: (json['stocks'] as List).map((e) => Stock.fromJson(e)).toList(),
+      lastUpdated: DateTime.parse(json['lastUpdated']),
+    );
   }
 }
 
-// --- Restored Helper Classes ---
+// --- Helper Classes (Updated for Dynamic Loading) ---
 
 class EgyptianStock {
   final String symbol;
@@ -391,9 +363,23 @@ class EgyptianStock {
     final difference = now.difference(listedDate!);
     return difference.inDays <= 30;
   }
+  
+  // Factory to create from JSON
+  factory EgyptianStock.fromJson(Map<String, dynamic> json) {
+    return EgyptianStock(
+      symbol: json['symbol'],
+      name: json['name'],
+      sector: json['sector'],
+    );
+  }
 }
 
 class EgyptianStocks {
+  // 1. Static list to hold loaded data
+  static List<EgyptianStock> _stocks = [];
+  static bool _isLoaded = false;
+
+  // 2. Hardcoded Precious Metals (Not in JSON)
   static List<EgyptianStock> get preciousMetals => [
     const EgyptianStock(symbol: 'GOLD_24K', name: 'Gold 24K (Gram)', sector: 'Precious Metals'),
     const EgyptianStock(symbol: 'GOLD_21K', name: 'Gold 21K (Gram)', sector: 'Precious Metals'),
@@ -401,21 +387,29 @@ class EgyptianStocks {
     const EgyptianStock(symbol: 'GOLD_POUND', name: 'Egyptian Gold Pound (8g)', sector: 'Precious Metals'),
   ];
 
-  static List<EgyptianStock> get banks => [
-    EgyptianStock(symbol: 'COMI.CA', name: 'Commercial International Bank (CIB)', sector: 'Banks', website: 'cibeg.com'),
-    EgyptianStock(symbol: 'CIEB.CA', name: 'Credit Agricole Egypt', sector: 'Banks', website: 'credit-agricole.com.eg'),
-    EgyptianStock(symbol: 'ADIB.CA', name: 'Abu Dhabi Islamic Bank', sector: 'Banks', website: 'adib.eg'),
-    EgyptianStock(symbol: 'HDBK.CA', name: 'Housing & Development Bank', sector: 'Banks', website: 'hdb-egy.com'),
-  ];
+  // 3. Initialization Method - CALL THIS IN MAIN.DART
+  static Future<void> init() async {
+    if (_isLoaded) return;
+    
+    try {
+      final String jsonString = await rootBundle.loadString('assets/data/egx_tickers.json');
+      final List<dynamic> jsonList = json.decode(jsonString);
+      
+      _stocks = jsonList.map((json) => EgyptianStock.fromJson(json)).toList();
+      _isLoaded = true;
+      debugPrint('✅ Loaded ${_stocks.length} EGX tickers from assets');
+    } catch (e) {
+      debugPrint('❌ Error loading EGX tickers: $e');
+    }
+  }
 
-  // ... (keeping all other static lists as provided in your prompt) ...
-  
+  // 4. Get All Stocks (Metals + Loaded Stocks)
   static List<EgyptianStock> get all => [
     ...preciousMetals,
-    ...banks,
-    // ... add other categories if they were in the original list
+    ..._stocks,
   ];
 
+  // 5. Helpers
   static List<EgyptianStock> bySector(String sector) {
     return all.where((stock) => stock.sector == sector).toList();
   }
@@ -429,7 +423,7 @@ class EgyptianStocks {
   }
 }
 
-// --- Detail Screen Classes (Required for StockDetailScreen) ---
+// --- Detail Screen Helper Models ---
 
 class QuoteData {
   final double price;

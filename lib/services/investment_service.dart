@@ -34,7 +34,7 @@ class InvestmentService extends ChangeNotifier {
     _startPriceUpdates();
   }
 
-  // --- Encryption Helpers ---
+  // --- Encryption (Kept same) ---
   enc.Key _getEncryptionKey() {
     const keySeed = 'statch_app_secure_investment_data_seed_2026';
     final bytes = utf8.encode(keySeed);
@@ -75,22 +75,16 @@ class InvestmentService extends ChangeNotifier {
     }
   }
 
-  // --- Storage Logic ---
+  // --- Storage ---
   Future<void> _loadInvestments() async {
     final rawString = _prefs?.getString(_storageKey);
-    
     if (rawString != null && rawString.isNotEmpty) {
       try {
         final jsonString = _decryptData(rawString);
         _investments = Investment.decodeList(jsonString);
         _investmentsController.add(_investments);
         notifyListeners();
-        
-        if (!rawString.contains(':')) {
-          await _saveInvestments();
-        }
       } catch (e) {
-        debugPrint('Error loading investments: $e');
         _investments = [];
         notifyListeners();
       }
@@ -105,7 +99,7 @@ class InvestmentService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Investment Logic ---
+  // --- Actions ---
   Future<Investment?> addInvestment({
     required String symbol,
     required String name,
@@ -114,15 +108,16 @@ class InvestmentService extends ChangeNotifier {
   }) async {
     double? purchasePrice = await _yahooService.fetchPriceAtDate(symbol, purchaseDate);
     
+    // Fetch CURRENT stock data to fallback or get current price
+    final stock = await _yahooService.fetchQuote(symbol);
+    
     if (purchasePrice == null) {
-      final quote = await _yahooService.fetchQuote(symbol);
-      purchasePrice = quote?.price;
+      purchasePrice = stock?.price;
     }
 
     if (purchasePrice == null || purchasePrice == 0) return null;
 
-    final currentQuote = await _yahooService.fetchQuote(symbol);
-    final currentPrice = currentQuote?.price ?? purchasePrice;
+    final currentPrice = stock?.price ?? purchasePrice;
 
     final investment = Investment(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -151,8 +146,8 @@ class InvestmentService extends ChangeNotifier {
     if (GoldService.isGoldSymbol(symbol)) {
       currentPrice = _goldService.getPriceBySymbol(symbol) ?? purchasePrice;
     } else {
-      final currentQuote = await _yahooService.fetchQuote(symbol);
-      currentPrice = currentQuote?.price ?? purchasePrice;
+      final stock = await _yahooService.fetchQuote(symbol);
+      currentPrice = stock?.price ?? purchasePrice;
     }
 
     final investment = Investment(
@@ -214,7 +209,7 @@ class InvestmentService extends ChangeNotifier {
 
   void _startPriceUpdates() {
     _updateTimer?.cancel();
-    _updateTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    _updateTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       _updateAllPrices();
     });
     _updateAllPrices();
@@ -224,13 +219,10 @@ class InvestmentService extends ChangeNotifier {
     if (_investments.isEmpty) return;
 
     bool hasChanges = false;
-    final goldSymbols = <String>{};
     final regularSymbols = <String>{};
     
     for (final inv in _investments) {
-      if (GoldService.isGoldSymbol(inv.symbol)) {
-        goldSymbols.add(inv.symbol);
-      } else {
+      if (!GoldService.isGoldSymbol(inv.symbol)) {
         regularSymbols.add(inv.symbol);
       }
     }
@@ -247,7 +239,7 @@ class InvestmentService extends ChangeNotifier {
         newPrice = quotes[symbol]?.price;
       }
       
-      if (newPrice != null && newPrice != _investments[i].currentPrice) {
+      if (newPrice != null && newPrice != 0 && newPrice != _investments[i].currentPrice) {
         _investments[i] = _investments[i].copyWith(currentPrice: newPrice);
         hasChanges = true;
       }
