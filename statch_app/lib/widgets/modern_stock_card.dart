@@ -12,6 +12,7 @@ class ModernStockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPositive = stock.isPositive;
     final color = isPositive ? AppTheme.robinhoodGreen : AppTheme.robinhoodRed;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -29,24 +30,24 @@ class ModernStockCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // 1. Logo / Avatar
+          // 1. Logo / Initial
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: isDark ? Colors.white10 : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
               child: Text(
-                stock.symbol.substring(0, 1),
+                stock.symbol.isNotEmpty ? stock.symbol[0] : '?',
                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
               ),
             ),
           ),
           const SizedBox(width: 16),
           
-          // 2. Name & Symbol
+          // 2. Name & Sector Badge
           Expanded(
             flex: 3,
             child: Column(
@@ -57,11 +58,38 @@ class ModernStockCard extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  stock.name,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                
+                // --- SECTOR BADGE ROW ---
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        stock.name,
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // If your Stock model has a 'sector' field, display it
+                    if (stock.sector != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          stock.sector!,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),

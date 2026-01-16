@@ -1,47 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../theme/app_theme.dart';
+import '../services/news_service.dart'; // Import NewsService
 
-class NewsItem {
-  final String source;
-  final String title;
-  final DateTime time;
-  final String imageUrl;
-  final String tag;
-
-  NewsItem({
-    required this.source,
-    required this.title,
-    required this.time,
-    this.imageUrl = '',
-    required this.tag,
-  });
-}
-
-class NewsFeedSection extends StatelessWidget {
+class NewsFeedSection extends StatefulWidget {
   const NewsFeedSection({super.key});
 
-  // Mock Data - In V3, replace this with an RSS parser from Enterprise.press or EconomyPlus
-  static final List<NewsItem> _news = [
-    NewsItem(
-      source: 'Enterprise',
-      title: 'CBE keeps interest rates on hold for the third consecutive meeting',
-      time: DateTime.now().subtract(const Duration(hours: 2)),
-      tag: 'Economy',
-    ),
-    NewsItem(
-      source: 'Economy Plus',
-      title: 'EGX 30 breaks new resistance level led by CIB and Fawry',
-      time: DateTime.now().subtract(const Duration(hours: 5)),
-      tag: 'Market',
-    ),
-    NewsItem(
-      source: 'Gold Bullion',
-      title: '21K Gold prices stabilize after global spot drop',
-      time: DateTime.now().subtract(const Duration(hours: 8)),
-      tag: 'Gold',
-    ),
-  ];
+  @override
+  State<NewsFeedSection> createState() => _NewsFeedSectionState();
+}
+
+class _NewsFeedSectionState extends State<NewsFeedSection> {
+  final NewsService _newsService = NewsService();
+  late Future<List<NewsItem>> _newsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _newsFuture = _newsService.fetchNews();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,24 +36,40 @@ class NewsFeedSection extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
               ),
-              Text(
-                'See All',
-                style: TextStyle(
-                  color: AppTheme.robinhoodGreen,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
+              // Optional: Add refresh button or 'See All'
             ],
           ),
         ),
         const SizedBox(height: 16),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _news.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) => _buildNewsCard(context, _news[index]),
+        
+        FutureBuilder<List<NewsItem>>(
+          future: _newsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('No recent news updates.'),
+              );
+            }
+
+            final news = snapshot.data!;
+            
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: news.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) => _buildNewsCard(context, news[index]),
+            );
+          },
         ),
       ],
     );
@@ -101,7 +94,7 @@ class NewsFeedSection extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon / Image Placeholder
+          // Icon Placeholder
           Container(
             width: 48,
             height: 48,
@@ -111,7 +104,7 @@ class NewsFeedSection extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                item.source[0],
+                item.source.isNotEmpty ? item.source[0].toUpperCase() : 'N',
                 style: const TextStyle(
                   color: AppTheme.robinhoodGreen,
                   fontWeight: FontWeight.bold,
@@ -144,9 +137,10 @@ class NewsFeedSection extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Text(
-                      timeago.format(item.time, locale: 'en_short'),
-                      style: const TextStyle(color: AppTheme.mutedText, fontSize: 11),
+                    // Basic fallback if timeago fails
+                    const Text(
+                      'Today',
+                      style: TextStyle(color: AppTheme.mutedText, fontSize: 11),
                     ),
                   ],
                 ),

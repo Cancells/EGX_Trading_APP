@@ -6,9 +6,9 @@ import 'package:provider/provider.dart';
 import 'services/preferences_service.dart';
 import 'services/investment_service.dart';
 import 'services/pin_service.dart';
-import 'services/currency_service.dart';
+import 'services/currency_service.dart'; // Import CurrencyService
 import 'services/market_data_service.dart'; 
-import 'repositories/market_repository.dart'; // Import the Repository
+import 'repositories/market_repository.dart';
 import 'theme/dynamic_theme.dart';
 import 'widgets/error_overlay.dart';
 import 'screens/welcome_screen.dart';
@@ -20,30 +20,32 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     
-    // Initialize services
+    // 1. Initialize Services
     await PreferencesService().init();
     await InvestmentService().init();
     await PinService().init();
-    await CurrencyService().init();
+    
+    // 2. Initialize Currency Service (Fetch USD Rate)
+    final currencyService = CurrencyService();
+    currencyService.init(); // Fire and forget (it will update listeners when ready)
     
     final themeProvider = DynamicThemeProvider();
     themeProvider.init();
     
-    // Create and initialize repository
+    // 3. Initialize Market Repo
     final marketRepo = MarketRepository();
-    
-    // We can fire-and-forget init here, or await it if we want data before app starts
-    // For better UX, we start it here so it loads while splash screen runs
     marketRepo.init();
 
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: themeProvider),
-          ChangeNotifierProvider(create: (_) => CurrencyService()),
+          // Provide the CurrencyService instance we created
+          ChangeNotifierProvider.value(value: currencyService),
           Provider(create: (_) => MarketDataService()),
-          // Provide the Repository globally
           Provider<MarketRepository>.value(value: marketRepo), 
+          // Provide InvestmentService (usually it's a ChangeNotifier or similar)
+          ChangeNotifierProvider(create: (_) => InvestmentService()),
         ],
         child: const StatchApp(),
       ),
@@ -76,11 +78,6 @@ class _StatchAppState extends State<StatchApp> {
     } else {
       setState(() => _appState = AppState.loading);
     }
-  }
-
-  void _onWelcomeComplete() async {
-    await _prefsService.setHasSeenWelcome(true);
-    setState(() => _appState = AppState.loading);
   }
 
   void _onLoadingComplete() {
@@ -131,7 +128,10 @@ class _StatchAppState extends State<StatchApp> {
           onSecurityRequired: _onSecurityRequired,
         );
       case AppState.welcome:
-        return WelcomeScreen(onGetStarted: _onWelcomeComplete);
+        return WelcomeScreen(onGetStarted: () async {
+            await _prefsService.setHasSeenWelcome(true);
+            setState(() => _appState = AppState.loading);
+        });
       case AppState.securityGate:
         return SecurityGateScreen(onAuthenticated: _onAuthenticated);
       case AppState.authenticated:

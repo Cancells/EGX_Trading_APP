@@ -1,7 +1,7 @@
 name: statch_app
-description: "Statch - Egyptian Market Trading App with Robinhood-style design"
+description: "Statch - Egyptian Market Tracking App"
 publish_to: 'none'
-version: 2.0.0+1
+version: 1.0.0
 
 environment:
   sdk: ^3.5.3
@@ -24,6 +24,7 @@ dependencies:
   cached_network_image: ^3.3.1
   flutter_cache_manager: ^3.3.1
   flutter_animate: ^4.5.0
+  xml: ^6.5.0
 
 dev_dependencies:
   flutter_test:

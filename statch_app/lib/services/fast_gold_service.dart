@@ -3,23 +3,18 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/market_data.dart';
+import 'currency_service.dart'; // Import CurrencyService
 
 class FastGoldService {
-  // This endpoint is widely used by gold widgets. It's fast, JSON, and public.
-  // Returns real-time Spot Prices for Gold (XAU) and Silver (XAG).
+  // Public endpoint for live gold spot price
   static const String _endpoint = 'https://data-asg.goldprice.org/dbXRates/USD';
   
-  // Manual USD rate fallback (Bank/Black market average). 
-  // In V3, fetch this dynamically.
-  static const double _usdEgpRate = 50.60; 
-
   Future<Map<String, GoldPrice>> fetchLivePrices() async {
     try {
       final response = await http.get(
         Uri.parse(_endpoint),
         headers: {
-          // Mimic a browser to avoid rejection
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0',
           'Accept': 'application/json',
         },
       ).timeout(const Duration(seconds: 5));
@@ -29,8 +24,8 @@ class FastGoldService {
         final items = jsonMap['items'] as List<dynamic>;
         if (items.isNotEmpty) {
           final data = items[0];
-          final xauUsd = (data['xauPrice'] as num).toDouble(); // Gold Spot / Oz
-          final xagUsd = (data['xagPrice'] as num).toDouble(); // Silver Spot / Oz
+          final xauUsd = (data['xauPrice'] as num).toDouble(); // Gold Spot
+          final xagUsd = (data['xagPrice'] as num).toDouble(); // Silver Spot
           
           return _calculateEgyptianPrices(xauUsd, xagUsd);
         }
@@ -46,26 +41,22 @@ class FastGoldService {
   Map<String, GoldPrice> _calculateEgyptianPrices(double xauSpotUsd, double xagSpotUsd) {
     final now = DateTime.now();
     
-    // --- Constants ---
+    // 1. Get Real-Time USD Rate from our CurrencyService
+    final egpRate = CurrencyService().usdToEgp; 
+    
+    // 2. Math: (Spot / 31.1035) * USD_Rate
     const ozToGram = 31.1035;
     
-    // --- Formulas ---
-    // 1. Calculate Raw 24K Price in EGP
-    // (Spot USD / 31.1) * USD_EGP_RATE
-    final price24k = (xauSpotUsd / ozToGram) * _usdEgpRate;
-    
-    // 2. Derive other karats
+    final price24k = (xauSpotUsd / ozToGram) * egpRate;
     final price21k = price24k * (21 / 24);
     final price18k = price24k * (18 / 24);
-    
-    // 3. Silver Price (Per Gram)
-    final priceSilver = (xagSpotUsd / ozToGram) * _usdEgpRate;
+    final priceSilver = (xagSpotUsd / ozToGram) * egpRate;
 
     return {
       '24k': GoldPrice(
         karat: '24K',
         pricePerGram: price24k,
-        change: 0, // Delta logic requires caching previous state
+        change: 0,
         changePercent: 0,
         lastUpdated: now,
         description: 'Pure Gold (99.9%)',
