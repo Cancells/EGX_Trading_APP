@@ -1,0 +1,1 @@
+/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/intermediates/cxx/release/521j3d20/obj/x86_64

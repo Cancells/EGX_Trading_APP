@@ -1,0 +1,31 @@
+<variant
+    name="release"
+    package="io.material.plugins.dynamic_color"
+    minSdkVersion="16"
+    targetSdkVersion="16"
+    mergedManifest="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml"
+    manifestMergeReport="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/outputs/logs/manifest-merger-release-report.txt"
+    proguardFiles="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/intermediates/default_proguard_files/global/proguard-android.txt-8.9.1"
+    partialResultsDir="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/intermediates/lint_vital_partial_results/release/lintVitalAnalyzeRelease/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/main/kotlin:src/release/java:src/release/kotlin"
+        resDirectories="src/main/res:src/release/res"
+        assetsDirectories="src/main/assets:src/release/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      classOutputs="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/intermediates/javac/release/compileReleaseJavaWithJavac/classes:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/tmp/kotlin-classes/release:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar"
+      type="MAIN"
+      applicationId="io.material.plugins.dynamic_color"
+      generatedSourceFolders="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/generated/ap_generated_sources/release/out:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/generated/source/buildConfig/release"
+      generatedResourceFolders="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/dynamic_color/generated/res/resValues/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/8.14/transforms/eac392a6d49cc1bbdfd3484e5f2fa660/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

@@ -1,0 +1,31 @@
+<variant
+    name="release"
+    package="com.it_nomads.fluttersecurestorage"
+    minSdkVersion="19"
+    targetSdkVersion="19"
+    mergedManifest="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml"
+    manifestMergeReport="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/outputs/logs/manifest-merger-release-report.txt"
+    proguardFiles="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/intermediates/default_proguard_files/global/proguard-android.txt-8.9.1"
+    partialResultsDir="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/intermediates/lint_partial_results/release/lintAnalyzeRelease/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/release/java:src/main/kotlin:src/release/kotlin"
+        resDirectories="src/main/res:src/release/res"
+        assetsDirectories="src/main/assets:src/release/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      classOutputs="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/intermediates/javac/release/compileReleaseJavaWithJavac/classes:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar"
+      type="MAIN"
+      applicationId="com.it_nomads.fluttersecurestorage"
+      generatedSourceFolders="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/generated/ap_generated_sources/release/out:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/generated/source/buildConfig/release"
+      generatedResourceFolders="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/flutter_secure_storage/generated/res/resValues/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/8.14/transforms/8b1238be436434fcdfa3bb139dd6acfe/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>

@@ -1,0 +1,12 @@
+[
+  { "symbol": "BTC", "name": "Bitcoin", "sector": "Crypto", "decimals": 2 },
+  { "symbol": "ETH", "name": "Ethereum", "sector": "Crypto", "decimals": 2 },
+  { "symbol": "SOL", "name": "Solana", "sector": "Crypto", "decimals": 2 },
+  { "symbol": "BNB", "name": "Binance Coin", "sector": "Crypto", "decimals": 2 },
+  { "symbol": "XRP", "name": "Ripple", "sector": "Crypto", "decimals": 4 },
+  { "symbol": "DOGE", "name": "Dogecoin", "sector": "Meme", "decimals": 6 },
+  { "symbol": "ADA", "name": "Cardano", "sector": "Crypto", "decimals": 4 },
+  { "symbol": "AVAX", "name": "Avalanche", "sector": "Crypto", "decimals": 2 },
+  { "symbol": "SHIB", "name": "Shiba Inu", "sector": "Meme", "decimals": 8 },
+  { "symbol": "LINK", "name": "Chainlink", "sector": "Oracle", "decimals": 2 }
+]

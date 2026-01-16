@@ -1,0 +1,34 @@
+{
+    "logs": [
+        {
+            "outputFile": "io.material.plugins.dynamic_color-release-37:/values-ldltr-v21/values-ldltr-v21.xml",
+            "map": [
+                {
+                    "source": "/home/codespace/.gradle/caches/8.14/transforms/a93431acb97e13e7c7d3e1189ad8e1c8/transformed/appcompat-1.5.0/res/values-ldltr-v21/values-ldltr-v21.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "112",
+                        "endOffsets": "163"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "io.material.plugins.dynamic_color-mergeReleaseResources-35:/values-ldltr-v21/values-ldltr-v21.xml",
+            "map": [
+                {
+                    "source": "/home/codespace/.gradle/caches/8.14/transforms/a93431acb97e13e7c7d3e1189ad8e1c8/transformed/appcompat-1.5.0/res/values-ldltr-v21/values-ldltr-v21.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "112",
+                        "endOffsets": "163"
+                    }
+                }
+            ]
+        }
+    ]
+}

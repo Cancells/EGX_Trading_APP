@@ -1,0 +1,22 @@
+[
+  { "symbol": "NVDA", "name": "NVIDIA Corp", "sector": "Technology" },
+  { "symbol": "AAPL", "name": "Apple Inc.", "sector": "Technology" },
+  { "symbol": "TSLA", "name": "Tesla Inc.", "sector": "Automotive" },
+  { "symbol": "MSFT", "name": "Microsoft Corp", "sector": "Technology" },
+  { "symbol": "AMZN", "name": "Amazon.com", "sector": "Retail" },
+  { "symbol": "GOOGL", "name": "Alphabet (Google)", "sector": "Technology" },
+  { "symbol": "META", "name": "Meta Platforms", "sector": "Technology" },
+  { "symbol": "AMD", "name": "Advanced Micro Devices", "sector": "Technology" },
+  { "symbol": "COIN", "name": "Coinbase Global", "sector": "Fintech" },
+  { "symbol": "PLTR", "name": "Palantir Technologies", "sector": "Software" },
+  { "symbol": "NFLX", "name": "Netflix Inc.", "sector": "Entertainment" },
+  { "symbol": "CRM", "name": "Salesforce Inc.", "sector": "Software" },
+  { "symbol": "INTC", "name": "Intel Corp", "sector": "Technology" },
+  { "symbol": "PYPL", "name": "PayPal Holdings", "sector": "Fintech" },
+  { "symbol": "UBER", "name": "Uber Technologies", "sector": "Transport" },
+  { "symbol": "SQ", "name": "Block Inc.", "sector": "Fintech" },
+  { "symbol": "SNAP", "name": "Snap Inc.", "sector": "Technology" },
+  { "symbol": "SPOT", "name": "Spotify Technology", "sector": "Entertainment" },
+  { "symbol": "ZM", "name": "Zoom Video", "sector": "Software" },
+  { "symbol": "SHOP", "name": "Shopify Inc.", "sector": "E-Commerce" }
+]

@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/home/codespace/flutter/packages/flutter_tools/gradle/src/main/scripts/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/codespace/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/.cxx/release/521j3d20/arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/codespace/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/.cxx/release/521j3d20/arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

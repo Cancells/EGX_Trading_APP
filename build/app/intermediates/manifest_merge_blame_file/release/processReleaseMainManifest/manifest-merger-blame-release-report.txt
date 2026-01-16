@@ -1,0 +1,235 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.statch.statch_app"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="36" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:2:5-66
+11-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:2:22-64
+12    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+12-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:3:5-71
+12-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:3:22-69
+13    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+13-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:4:5-73
+13-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:4:22-71
+14
+15    <queries>
+15-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:35:5-40:15
+16        <intent>
+16-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:36:9-39:18
+17            <action android:name="android.intent.action.PROCESS_TEXT" />
+17-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:37:13-72
+17-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:37:21-70
+18
+19            <data android:mimeType="text/plain" />
+19-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:38:13-50
+19-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:38:19-48
+20        </intent>
+21    </queries>
+22
+23    <permission
+23-->[androidx.core:core:1.17.0] /home/codespace/.gradle/caches/8.14/transforms/e6f36e950f8eee5bc6ccb101d5a0c8e6/transformed/core-1.17.0/AndroidManifest.xml:22:5-24:47
+24        android:name="com.statch.statch_app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+24-->[androidx.core:core:1.17.0] /home/codespace/.gradle/caches/8.14/transforms/e6f36e950f8eee5bc6ccb101d5a0c8e6/transformed/core-1.17.0/AndroidManifest.xml:23:9-81
+25        android:protectionLevel="signature" />
+25-->[androidx.core:core:1.17.0] /home/codespace/.gradle/caches/8.14/transforms/e6f36e950f8eee5bc6ccb101d5a0c8e6/transformed/core-1.17.0/AndroidManifest.xml:24:9-44
+26
+27    <uses-permission android:name="com.statch.statch_app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+27-->[androidx.core:core:1.17.0] /home/codespace/.gradle/caches/8.14/transforms/e6f36e950f8eee5bc6ccb101d5a0c8e6/transformed/core-1.17.0/AndroidManifest.xml:26:5-97
+27-->[androidx.core:core:1.17.0] /home/codespace/.gradle/caches/8.14/transforms/e6f36e950f8eee5bc6ccb101d5a0c8e6/transformed/core-1.17.0/AndroidManifest.xml:26:22-94
+28
+29    <application
+30        android:name="android.app.Application"
+30-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:8:9-42
+31        android:allowBackup="false"
+31-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:10:9-36
+32        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+32-->[androidx.core:core:1.17.0] /home/codespace/.gradle/caches/8.14/transforms/e6f36e950f8eee5bc6ccb101d5a0c8e6/transformed/core-1.17.0/AndroidManifest.xml:28:18-86
+33        android:extractNativeLibs="false"
+34        android:fullBackupContent="false"
+34-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:11:9-42
+35        android:icon="@mipmap/ic_launcher"
+35-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:9:9-43
+36        android:label="Statch"
+36-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:7:9-31
+37        android:usesCleartextTraffic="false" >
+37-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:12:9-45
+38        <activity
+38-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:13:9-30:20
+39            android:name="com.statch.statch_app.MainActivity"
+39-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:14:13-41
+40            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+40-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:19:13-163
+41            android:exported="true"
+41-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:15:13-36
+42            android:hardwareAccelerated="true"
+42-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:20:13-47
+43            android:launchMode="singleTop"
+43-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:16:13-43
+44            android:taskAffinity=""
+44-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:17:13-36
+45            android:theme="@style/LaunchTheme"
+45-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:18:13-47
+46            android:windowSoftInputMode="adjustResize" >
+46-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:21:13-55
+47            <meta-data
+47-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:22:13-25:17
+48                android:name="io.flutter.embedding.android.NormalTheme"
+48-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:23:15-70
+49                android:resource="@style/NormalTheme" />
+49-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:24:15-52
+50
+51            <intent-filter>
+51-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:26:13-29:29
+52                <action android:name="android.intent.action.MAIN" />
+52-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:27:17-68
+52-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:27:25-66
+53
+54                <category android:name="android.intent.category.LAUNCHER" />
+54-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:28:17-76
+54-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:28:27-74
+55            </intent-filter>
+56        </activity>
+57
+58        <meta-data
+58-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:31:9-33:33
+59            android:name="flutterEmbedding"
+59-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:32:13-44
+60            android:value="2" />
+60-->/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/android/app/src/main/AndroidManifest.xml:33:13-30
+61
+62        <provider
+62-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:9:9-17:20
+63            android:name="io.flutter.plugins.imagepicker.ImagePickerFileProvider"
+63-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:10:13-82
+64            android:authorities="com.statch.statch_app.flutter.image_provider"
+64-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:11:13-74
+65            android:exported="false"
+65-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:12:13-37
+66            android:grantUriPermissions="true" >
+66-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:13:13-47
+67            <meta-data
+67-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:14:13-16:75
+68                android:name="android.support.FILE_PROVIDER_PATHS"
+68-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:15:17-67
+69                android:resource="@xml/flutter_image_picker_file_paths" />
+69-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:16:17-72
+70        </provider> <!-- Trigger Google Play services to install the backported photo picker module. -->
+71        <service
+71-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:19:9-31:19
+72            android:name="com.google.android.gms.metadata.ModuleDependencies"
+72-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:20:13-78
+73            android:enabled="false"
+73-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:21:13-36
+74            android:exported="false" >
+74-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:22:13-37
+75            <intent-filter>
+75-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:24:13-26:29
+76                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
+76-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:25:17-94
+76-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:25:25-91
+77            </intent-filter>
+78
+79            <meta-data
+79-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:28:13-30:36
+80                android:name="photopicker_activity:0:required"
+80-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:29:17-63
+81                android:value="" />
+81-->[:image_picker_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/image_picker_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:30:17-33
+82        </service>
+83
+84        <activity
+84-->[:url_launcher_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/url_launcher_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:8:9-11:74
+85            android:name="io.flutter.plugins.urllauncher.WebViewActivity"
+85-->[:url_launcher_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/url_launcher_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:9:13-74
+86            android:exported="false"
+86-->[:url_launcher_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/url_launcher_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:10:13-37
+87            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+87-->[:url_launcher_android] /workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/url_launcher_android/intermediates/merged_manifest/release/processReleaseManifest/AndroidManifest.xml:11:13-71
+88
+89        <uses-library
+89-->[androidx.window:window:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/9628a27b9affc23891272fbacc7d1ca9/transformed/jetified-window-1.2.0/AndroidManifest.xml:23:9-25:40
+90            android:name="androidx.window.extensions"
+90-->[androidx.window:window:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/9628a27b9affc23891272fbacc7d1ca9/transformed/jetified-window-1.2.0/AndroidManifest.xml:24:13-54
+91            android:required="false" />
+91-->[androidx.window:window:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/9628a27b9affc23891272fbacc7d1ca9/transformed/jetified-window-1.2.0/AndroidManifest.xml:25:13-37
+92        <uses-library
+92-->[androidx.window:window:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/9628a27b9affc23891272fbacc7d1ca9/transformed/jetified-window-1.2.0/AndroidManifest.xml:26:9-28:40
+93            android:name="androidx.window.sidecar"
+93-->[androidx.window:window:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/9628a27b9affc23891272fbacc7d1ca9/transformed/jetified-window-1.2.0/AndroidManifest.xml:27:13-51
+94            android:required="false" />
+94-->[androidx.window:window:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/9628a27b9affc23891272fbacc7d1ca9/transformed/jetified-window-1.2.0/AndroidManifest.xml:28:13-37
+95
+96        <provider
+96-->[androidx.emoji2:emoji2:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/0172a13315d4520697446e3bfeb50909/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+97            android:name="androidx.startup.InitializationProvider"
+97-->[androidx.emoji2:emoji2:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/0172a13315d4520697446e3bfeb50909/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:25:13-67
+98            android:authorities="com.statch.statch_app.androidx-startup"
+98-->[androidx.emoji2:emoji2:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/0172a13315d4520697446e3bfeb50909/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:26:13-68
+99            android:exported="false" >
+99-->[androidx.emoji2:emoji2:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/0172a13315d4520697446e3bfeb50909/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:27:13-37
+100            <meta-data
+100-->[androidx.emoji2:emoji2:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/0172a13315d4520697446e3bfeb50909/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+101                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+101-->[androidx.emoji2:emoji2:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/0172a13315d4520697446e3bfeb50909/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:30:17-75
+102                android:value="androidx.startup" />
+102-->[androidx.emoji2:emoji2:1.2.0] /home/codespace/.gradle/caches/8.14/transforms/0172a13315d4520697446e3bfeb50909/transformed/jetified-emoji2-1.2.0/AndroidManifest.xml:31:17-49
+103            <meta-data
+103-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/codespace/.gradle/caches/8.14/transforms/863eb672ea079fe91365c7364e1f3a0c/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:29:13-31:52
+104                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+104-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/codespace/.gradle/caches/8.14/transforms/863eb672ea079fe91365c7364e1f3a0c/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:30:17-78
+105                android:value="androidx.startup" />
+105-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/codespace/.gradle/caches/8.14/transforms/863eb672ea079fe91365c7364e1f3a0c/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:31:17-49
+106            <meta-data
+106-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:29:13-31:52
+107                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+107-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:30:17-85
+108                android:value="androidx.startup" />
+108-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:31:17-49
+109        </provider>
+110
+111        <receiver
+111-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:34:9-52:20
+112            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+112-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:35:13-76
+113            android:directBootAware="false"
+113-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:36:13-44
+114            android:enabled="true"
+114-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:37:13-35
+115            android:exported="true"
+115-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:38:13-36
+116            android:permission="android.permission.DUMP" >
+116-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:39:13-57
+117            <intent-filter>
+117-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:40:13-42:29
+118                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+118-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:41:17-91
+118-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:41:25-88
+119            </intent-filter>
+120            <intent-filter>
+120-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:43:13-45:29
+121                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+121-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:44:17-85
+121-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:44:25-82
+122            </intent-filter>
+123            <intent-filter>
+123-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:46:13-48:29
+124                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+124-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:47:17-88
+124-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:47:25-85
+125            </intent-filter>
+126            <intent-filter>
+126-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:49:13-51:29
+127                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+127-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:50:17-95
+127-->[androidx.profileinstaller:profileinstaller:1.4.0] /home/codespace/.gradle/caches/8.14/transforms/eb64016a06afbdfc77747af1ad8edfec/transformed/jetified-profileinstaller-1.4.0/AndroidManifest.xml:50:25-92
+128            </intent-filter>
+129        </receiver>
+130    </application>
+131
+132</manifest>

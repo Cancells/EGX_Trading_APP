@@ -1,0 +1,37 @@
+<variant
+    name="release"
+    package="com.statch.statch_app"
+    minSdkVersion="24"
+    targetSdkVersion="36"
+    shrinking="true"
+    mergedManifest="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/intermediates/merged_manifest/release/outputReleaseAppLinkSettings/AndroidManifest.xml"
+    manifestMergeReport="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/outputs/logs/manifest-merger-release-report.txt"
+    proguardFiles="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.9.1:/home/codespace/flutter/packages/flutter_tools/gradle/flutter_proguard_rules.pro:proguard-rules.pro:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/intermediates/default_proguard_files/global/proguard-android-optimize.txt-8.9.1:proguard-rules.pro"
+    partialResultsDir="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/intermediates/lint_vital_partial_results/release/lintVitalAnalyzeRelease/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/main/kotlin:src/release/java:src/release/kotlin"
+        resDirectories="src/main/res:src/release/res"
+        assetsDirectories="src/main/assets:src/release/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <manifestPlaceholders>
+    <placeholder
+        name="applicationName"
+        value="android.app.Application" />
+  </manifestPlaceholders>
+  <artifact
+      classOutputs="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/intermediates/javac/release/compileReleaseJavaWithJavac/classes:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/tmp/kotlin-classes/release:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/kotlinToolingMetadata:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar"
+      type="MAIN"
+      applicationId="com.statch.statch_app"
+      generatedSourceFolders="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/generated/ap_generated_sources/release/out:/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/generated/source/buildConfig/release"
+      generatedResourceFolders="/workspaces/codespaces-blank/EGX_Trading_APP/statch_app/build/app/generated/res/resValues/release"
+      desugaredMethodsFiles="/home/codespace/.gradle/caches/8.14/transforms/081605ad9e3c4fb946746b23f714096c/transformed/D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>
