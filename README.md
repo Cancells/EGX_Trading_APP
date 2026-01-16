@@ -1,155 +1,124 @@
-# Statch - Egyptian Market Trading App
+Markdown
+# 📈 Statch - Egyptian Market Tracker
 
-A production-ready Flutter Android app with Robinhood-style design, featuring real-time Egyptian market data visualization.
+![Statch Banner](assets/images/icon.png)
 
-![Statch App](https://img.shields.io/badge/Flutter-3.24.3-blue) ![Platform](https://img.shields.io/badge/Platform-Android-green) ![License](https://img.shields.io/badge/License-MIT-yellow)
+**Statch** is a modern, Flutter-based financial tracking application designed specifically for the Egyptian market. It allows users to track **EGX Stock prices**, **Live Gold rates**, and **Cryptocurrency** trends while managing a personal investment portfolio with real-time gain/loss analysis.
 
-## 🎨 Design System
+Built with **Material 3**, Dynamic Color (Material You), and a clean glassmorphism aesthetic.
 
-- **Primary Color**: `#00C805` (Robinhood Green)
-- **Secondary Color**: `#FF5000` (Robinhood Red - for dips)
-- **Background Dark**: `#000000` (True Black)
-- **Background Light**: `#FAFAFA` (Off-White)
-- **Icons**: Material Symbols (Rounded) with weight 300
-- **Typography**: Inter (via Google Fonts)
+---
 
-## ✨ Features
+## 🚀 Features
 
-### Core Infrastructure
-- **Mock Market Service**: Real-time streaming of 2026 Egyptian market data
-  - EGX 30 Index: ~41,500 EGP
-  - Gold 24K: ~6,850 EGP/g
-  - Gold 21K: ~6,000 EGP/g
-  - Stocks: COMI, TMGH, ETEL, FWRY with realistic EGP prices
+### 📊 Market Tracking
+* **EGX Stocks:** Track over 80+ Egyptian companies (COMI, FWRY, EAST, etc.) with ticker data loaded dynamically.
+* **Gold Prices:** Live tracking of Gold 24K, 21K, 18K, and the Gold Pound.
+* **Crypto & US Markets:** Tabs for tracking global assets (Simulated/API integrated).
+* **Interactive Charts:** Sparklines and detailed intraday price charts using `fl_chart`.
 
-- **Error Debug Overlay**: On-screen error display for APK debugging
+### 💼 Portfolio Management
+* **Holdings:** Add assets with purchase date, quantity, and price.
+* **Performance:** Real-time calculation of Total Gain/Loss, Daily Change, and Portfolio Value.
+* **Privacy Mode:** Hide sensitive balance information with a single tap (Biometric-ready).
 
-### High-Fidelity Dashboard
-- **Interactive Chart**: fl_chart implementation with:
-  - Animation on load
-  - Color change based on daily trend (Green vs Red)
-  - Long Press + Drag gesture for price inspection
-  - Vertical indicator line with price tooltip
+### 🎨 Modern UI/UX
+* **Material You:** Dynamic theming that adapts to your device's wallpaper (Android 12+).
+* **Themes:** Full support for Light and Dark modes.
+* **Glassmorphism:** Premium frosted glass effects on cards and overlays.
+* **Haptic Feedback:** Tactile responses for interactions.
+* **Shimmer Loading:** Smooth skeleton loading states for better perceived performance.
 
-- **Gold Cards**: Premium design with gradient backgrounds and gold ingot icons
+### 🔒 Security
+* **App Lock:** Secure the app with a PIN code.
+* **Biometrics:** Optional Fingerprint/Face ID unlock.
+* **Secure Storage:** Sensitive data encrypted using `flutter_secure_storage`.
 
-### Navigation & Profile
-- **Top-Right Navigation**: CircleAvatar with custom modal menu
-- **Profile Screen**: Edit name, avatar, and DOB
-- **Settings Screen**: Theme toggle, notification settings
-- **About Screen**: App version and credits
+---
 
-### Production Polish
-- Hero animations for screen transitions
-- AnimatedContainer for price changes
-- AnimatedSwitcher for smooth value updates
-- Custom StatchLogo using CustomPainter
+## 🛠️ Tech Stack
 
-## 📁 Project Structure
+* **Framework:** [Flutter](https://flutter.dev/) (Dart)
+* **State Management:** [Provider](https://pub.dev/packages/provider)
+* **Architecture:** Service-Oriented Architecture (MVVM-style)
+* **UI Components:** `fl_chart`, `shimmer`, `flutter_animate`, `dynamic_color`.
+* **Data & Networking:** `http`, `shared_preferences`, `flutter_secure_storage`.
+* **Assets:** Local JSON data handling for tickers.
 
-```
+---
+
+## 📸 Screenshots
+
+| Dashboard (Light) | Dashboard (Dark) | Asset Detail |
+|:---:|:---:|:---:|
+| | | |
+| ![Light Mode](https://via.placeholder.com/200x400?text=Light+Mode) | ![Dark Mode](https://via.placeholder.com/200x400?text=Dark+Mode) | ![Detail](https://via.placeholder.com/200x400?text=Detail+View) |
+
+---
+
+## 📂 Project Structure
+
+```text
 lib/
-├── main.dart                     # App entry point with error handling
-├── models/
-│   └── market_data.dart          # Data models (MarketIndex, GoldPrice, Stock)
-├── services/
-│   ├── market_data_service.dart  # Mock market data streaming service
-│   └── preferences_service.dart  # Shared preferences wrapper
-├── screens/
-│   ├── dashboard_screen.dart     # Main dashboard with charts
-│   ├── profile_screen.dart       # User profile editor
-│   ├── settings_screen.dart      # App settings
-│   └── about_screen.dart         # About & credits
-├── widgets/
-│   ├── error_overlay.dart        # Debug error banner
-│   ├── gold_card.dart            # Gold price card widget
-│   ├── mini_chart.dart           # Sparkline chart for stocks
-│   ├── price_chart.dart          # Main interactive chart
-│   ├── statch_logo.dart          # Custom logo painter
-│   └── stock_card.dart           # Stock price card
-└── theme/
-    └── app_theme.dart            # Theme configuration
-```
+├── main.dart                 # Application entry point
+├── models/                   # Data models (Stock, Investment, MarketData)
+├── repositories/             # Data fetching repositories
+├── screens/                  # UI Screens (Dashboard, Portfolio, Settings)
+├── services/                 # Business Logic (YahooFinance, Gold, Preferences)
+├── theme/                    # App Theme & Dynamic Color logic
+├── utils/                    # Helpers (Icon generation, Formatters)
+└── widgets/                  # Reusable UI components (Cards, Charts)
+assets/
+└── data/                     # JSON files (egx_tickers.json, etc.)
+⚡ Installation
+Prerequisites:
 
-## 🚀 Getting Started
+Flutter SDK installed (v3.5.0 or higher recommended).
 
-### Prerequisites
-- Flutter SDK 3.24.3 or later
-- Android SDK
-- JDK 17
+Android Studio / VS Code.
 
-### Installation
+Clone the repository:
 
-1. Clone the repository
-```bash
-cd statch_app
-```
+Bash
+git clone [https://github.com/yourusername/statch.git](https://github.com/yourusername/statch.git)
+cd statch
+Install dependencies:
 
-2. Get dependencies
-```bash
+Bash
 flutter pub get
-```
+Run the app:
 
-3. Run the app
-```bash
+Bash
 flutter run
-```
+⚙️ Configuration
+App Icon Generation
+The app includes a built-in script to generate its own logo using code. To regenerate the icon:
 
-### Build Release APK
+Uncomment IconGenerator.generateAndSaveIcon(); in main.dart.
 
-```bash
-flutter build apk --release
-```
+Run the app.
 
-The APK will be generated at `build/app/outputs/flutter-apk/app-release.apk`
+Retrieve the file from device storage or use flutter_launcher_icons to apply it.
 
-## 📱 Screenshots
+Data Sources
+Stocks: Uses Yahoo Finance API (scraped/unofficial).
 
-The app features:
-- Dark and light mode support
-- Interactive price charts
-- Gold price cards with gradient backgrounds
-- Stock list with mini sparklines
-- Profile customization
-- Settings with toggle switches
+Tickers: Loaded from assets/data/egx_tickers.json. To add a stock, simply append it to this JSON file.
 
-## 🛠️ Dependencies
+🤝 Contributing
+Contributions are welcome!
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| fl_chart | ^0.68.0 | Interactive charts |
-| shared_preferences | ^2.2.3 | Local storage |
-| intl | ^0.19.0 | Date formatting |
-| google_fonts | ^6.2.1 | Inter font family |
+Fork the Project.
 
-## 🎯 Key Implementation Details
+Create your Feature Branch (git checkout -b feature/AmazingFeature).
 
-### Error Overlay
-```dart
-ErrorOverlay.showError("Error message");
-ErrorOverlay.showErrorWithAutoDismiss("Message", duration: Duration(seconds: 5));
-```
+Commit your Changes (git commit -m 'Add some AmazingFeature').
 
-### Market Data Stream
-```dart
-MarketDataService().marketDataStream.listen((data) {
-  // Handle real-time market data
-});
-```
+Push to the Branch (git push origin feature/AmazingFeature).
 
-### Theme Toggle
-```dart
-PreferencesService().setDarkMode(true);
-```
+Open a Pull Request.
 
-## 📝 License
+📄 License
+Distributed under the MIT License. See LICENSE for more information.
 
-This project is licensed under the MIT License.
-
-## 🙏 Credits
-
-Built with ❤️ for Egyptian Investors
-
-- Powered by Flutter & Dart
-- Charts by fl_chart
-- Typography by Google Fonts
+Built with ❤️ for the Egyptian Investor Community.
